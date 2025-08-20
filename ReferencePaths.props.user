@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup>
+        <ReferencePath>C:\Users\pisto\Desktop\SCPLocalServer\SCPSL_Data\Managed;C:\Kadava-SL\KadavasKingdom org\SL_Main\3rdparty</ReferencePath>
+    </PropertyGroup>
+</Project>

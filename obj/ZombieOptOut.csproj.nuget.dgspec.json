@@ -1,0 +1,71 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\KadavasKingdomGit\\ZombieOptOut\\ZombieOptOut.csproj": {}
+  },
+  "projects": {
+    "D:\\KadavasKingdomGit\\ZombieOptOut\\ZombieOptOut.csproj": {
+      "version": "0.0.1",
+      "restore": {
+        "projectUniqueName": "D:\\KadavasKingdomGit\\ZombieOptOut\\ZombieOptOut.csproj",
+        "projectName": "ZombieOptOut",
+        "projectPath": "D:\\KadavasKingdomGit\\ZombieOptOut\\ZombieOptOut.csproj",
+        "packagesPath": "C:\\Users\\pisto\\.nuget\\packages\\",
+        "outputPath": "D:\\KadavasKingdomGit\\ZombieOptOut\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\pisto\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "targetAlias": "net48",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net48": {
+          "targetAlias": "net48",
+          "dependencies": {
+            "BepInEx.AssemblyPublicizer.MSBuild": {
+              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[0.4.3, )"
+            },
+            "Northwood.LabAPI": {
+              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.1.1, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
