@@ -37,6 +37,9 @@
 		<Reference Include="Mirror" Publicize="true" Private="false" />
 		<Reference Include="Mirror.Components" Private="false" />
 		<Reference Include="Pooling" Private="false" />
+		<Reference Include="SimpleCustomRoles">
+		  <HintPath>C:\Users\pisto\AppData\Roaming\SCP Secret Laboratory\LabAPI\plugins\global\SimpleCustomRoles.dll</HintPath>
+		</Reference>
 		<Reference Include="Unity.TextMeshPro" Private="false" />
 		<Reference Include="UnityEngine" Private="false" />
 		<Reference Include="UnityEngine.CoreModule" Private="false" />

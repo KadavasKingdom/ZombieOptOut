@@ -8,3 +8,7 @@ D:\KadavasKingdomGit\ZombieOptOut\bin\Debug\net48\ZombieOptOut.dll
 D:\KadavasKingdomGit\ZombieOptOut\bin\Debug\net48\ZombieOptOut.pdb
 D:\KadavasKingdomGit\ZombieOptOut\obj\Debug\net48\ZombieOptOut.dll
 D:\KadavasKingdomGit\ZombieOptOut\obj\Debug\net48\ZombieOptOut.pdb
+D:\KadavasKingdomGit\ZombieOptOut\obj\Debug\net48\ZombieOptOut.sourcelink.json
+D:\KadavasKingdomGit\ZombieOptOut\bin\Debug\net48\SimpleCustomRoles.dll
+D:\KadavasKingdomGit\ZombieOptOut\bin\Debug\net48\SimpleCustomRoles.pdb
+D:\KadavasKingdomGit\ZombieOptOut\obj\Debug\net48\ZombieOp.B5A1856C.Up2Date

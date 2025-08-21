@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZombieOptOut;KadavasKingdom;Kadava")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.0.1.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.1+f4432729176b6cc2429750274229f03945dd404e")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZombieOptOut")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZombieOptOut")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.0.1.0")]

@@ -5,19 +5,28 @@ namespace ZombieOptOut
 {
     internal class ServerSpecificSettings
     {
-        public static SSTwoButtonsSetting optOutButton;
-        public static SSTwoButtonsSetting autoFillButton;
-        public static Dictionary<ReferenceHub, (bool /* optOut */, bool /* fill */)> savedSettings = [];
+        public static SSDropdownSetting optOutDropdown;
+        public static Dictionary<ReferenceHub, int> savedSettings = [];
+
+        public enum OptOutType
+        {
+            OptIn,
+            OptInAndFill,
+            OptOut,
+            OptOutFully
+        };
 
         public static void Initialize()
         {
-            optOutButton = new SSTwoButtonsSetting(null, "Opt-out of being a Zombie", "False", "True");
-            autoFillButton = new SSTwoButtonsSetting(null, "Fill for opted-out Zombies", "False", "True");
+            if (ZombieOptOut.Main.Instance.Config.EnableSimpleCustomRolesSupport)
+                optOutDropdown = new SSDropdownSetting(null, "Zombie Opt-Out Mode", ["Default (Not Opted-Out)", "Default + Fill (Replace Opted-Out players)", "Opt-Out", "Out-Out+ (Includes custom roles)"]);
+            else
+                optOutDropdown = new SSDropdownSetting(null, "Zombie Opt-Out Mode", ["Default (Not Opted-Out)", "Fill for Opted-Out Players", "Opt-Out"]);
+
             var settings = new List<ServerSpecificSettingBase>
                     {
                         new SSGroupHeader("Zombie Opt-out", false),
-                        optOutButton,
-                        autoFillButton
+                        optOutDropdown,
                     };
 
             ServerSpecificSettingsSync.DefinedSettings = settings.ToArray();
@@ -35,7 +44,7 @@ namespace ZombieOptOut
         private static void ServerOnSettingValueReceived(ReferenceHub hub, ServerSpecificSettingBase @base)
         {
             if (!savedSettings.TryGetValue(hub, out var val))
-                savedSettings.Add(hub, (false, false));
+                savedSettings.Add(hub, 0);
             
             var settings = savedSettings[hub];
 
@@ -44,12 +53,9 @@ namespace ZombieOptOut
             if (player == null)
                 return;
 
-            if (@base is SSTwoButtonsSetting twoButton && twoButton.SettingId == optOutButton.SettingId)
-                settings.Item1 = twoButton.SyncIsA;   
+            if (@base is SSDropdownSetting dropdown && dropdown.SettingId == optOutDropdown.SettingId)
+                settings = optOutDropdown.SyncSelectionIndexValidated;
 
-            if (@base is SSTwoButtonsSetting twoButton2 && twoButton2.SettingId == autoFillButton.SettingId)
-                settings.Item2 = twoButton2.SyncIsA;
-            
             savedSettings[hub] = settings;
         }
     }
