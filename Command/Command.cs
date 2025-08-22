@@ -28,12 +28,7 @@ public class Commands : ICommand
             return false;
         }
 
-        Player p = Player.Get(sender);
-
-        if (sender is not PlayerCommandSender playerSender)
-            return false;
-
-        var player = Player.ReadyList.Where(x => x.UserId == playerSender.SenderId).FirstOrDefault();
+        Player player = Player.Get(sender);
 
         OptOutSystem.RoleFill(player);
         response = "You've filled in for a missing zombie!";
