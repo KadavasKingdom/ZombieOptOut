@@ -1,42 +1,39 @@
 ﻿using UserSettings.ServerSpecific;
 
-
 namespace ZombieOptOut
 {
     internal class ServerSpecificSettings
     {
-        public static SSDropdownSetting optOutDropdown;
-        public static Dictionary<ReferenceHub, int> savedSettings = [];
-
-        public enum OptOutType
-        {
-            OptIn,
-            OptInAndFill,
-            OptOut,
-            OptOutFully
-        };
+        public static SSTwoButtonsSetting optOutButton;
+        public static SSTwoButtonsSetting autoFillButton;
+        public static Dictionary<ReferenceHub, (bool /* optOut */, bool /* fill */)> savedSettings = [];
+        static ServerSpecificSettingBase[] Settings;
 
         public static void Initialize()
         {
-            if (ZombieOptOut.Main.Instance.Config.EnableSimpleCustomRolesSupport)
-                optOutDropdown = new SSDropdownSetting(null, "Zombie Opt-Out Mode", ["Default (Not Opted-Out)", "Default + Fill (Replace Opted-Out players)", "Opt-Out", "Out-Out+ (Includes custom roles)"]);
-            else
-                optOutDropdown = new SSDropdownSetting(null, "Zombie Opt-Out Mode", ["Default (Not Opted-Out)", "Fill for Opted-Out Players", "Opt-Out"]);
+            optOutButton = new SSTwoButtonsSetting(null, "Opt-out of being a Zombie", "True", "False", defaultIsB: true);
+            autoFillButton = new SSTwoButtonsSetting(null, "Auto-Fill for opted-out Zombies", "True", "False", defaultIsB: true);
+            Settings =
+            [
+                new SSGroupHeader("Zombie Opt-out", false),
+                optOutButton,
+                autoFillButton
+            ];
 
-            var settings = new List<ServerSpecificSettingBase>
-                    {
-                        new SSGroupHeader("Zombie Opt-out", false),
-                        optOutDropdown,
-                    };
-
-            ServerSpecificSettingsSync.DefinedSettings = settings.ToArray();
+            List<ServerSpecificSettingBase> settingBases = [];
+            if (ServerSpecificSettingsSync.DefinedSettings != null)
+            {
+                settingBases = [.. ServerSpecificSettingsSync.DefinedSettings];
+            }
+            settingBases.AddRange(Settings);
+            ServerSpecificSettingsSync.DefinedSettings = [.. settingBases];
             ServerSpecificSettingsSync.ServerOnSettingValueReceived += ServerOnSettingValueReceived;
             ServerSpecificSettingsSync.SendToAll();
         }
 
         public static void DeInitialize()
         {
-            ServerSpecificSettingsSync.DefinedSettings = new ServerSpecificSettingBase[0];
+            ServerSpecificSettingsSync.DefinedSettings = [];
             ServerSpecificSettingsSync.ServerOnSettingValueReceived -= ServerOnSettingValueReceived;
             ServerSpecificSettingsSync.SendToAll();
         }
@@ -44,8 +41,8 @@ namespace ZombieOptOut
         private static void ServerOnSettingValueReceived(ReferenceHub hub, ServerSpecificSettingBase @base)
         {
             if (!savedSettings.TryGetValue(hub, out var val))
-                savedSettings.Add(hub, 0);
-            
+                savedSettings.Add(hub, (false, false));
+
             var settings = savedSettings[hub];
 
             var player = Player.Get(hub);
@@ -53,8 +50,11 @@ namespace ZombieOptOut
             if (player == null)
                 return;
 
-            if (@base is SSDropdownSetting dropdown && dropdown.SettingId == optOutDropdown.SettingId)
-                settings = optOutDropdown.SyncSelectionIndexValidated;
+            if (@base is SSTwoButtonsSetting twoButton && twoButton.SettingId == optOutButton.SettingId)
+                settings.Item1 = twoButton.SyncIsA;
+
+            if (@base is SSTwoButtonsSetting twoButton2 && twoButton2.SettingId == autoFillButton.SettingId)
+                settings.Item2 = twoButton2.SyncIsA;
 
             savedSettings[hub] = settings;
         }

@@ -5,121 +5,110 @@ using SimpleCustomRoles.RoleYaml;
 using UnityEngine;
 
 
-namespace ZombieOptOut
+namespace ZombieOptOut;
+
+public class OptOutSystem
 {
-    public class OptOutSystem
+    public static uint waitingForCompensationFrom = 0;
+    private static Player optedOutPlayer = null;
+    private static Player main049Player = null;
+    private static CustomRoleBaseInfo savedCustomRole = null;
+
+    public static void RevivedZombie(Scp049ResurrectedBodyEventArgs ev)
     {
-        public static uint waitingForCompensationFrom = 0;
-        private static Player optedOutPlayer = null;
-        private static Player main049Player = null;
-        private static CustomRoleBaseInfo savedCustomRole = null;
+        main049Player = ev.Player;
+        ReferenceHub refHub = ev.Target.ReferenceHub;
 
-        public static void RevivedZombie(Scp049ResurrectedBodyEventArgs ev)
+        if (ServerSpecificSettings.savedSettings[refHub].Item1 == false)
+            return;
+
+        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
+            SimpleCustomRoles.Helpers.CustomRoleHelpers.GetPlayerAndRoles().TryGetValue(ev.Target, out savedCustomRole);
+
+        ev.Target.SetRole(RoleTypeId.Spectator);
+        Timing.CallDelayed(1.5f, () =>
         {
-            main049Player = ev.Player;
-            ReferenceHub refHub = ev.Target.ReferenceHub;
+            if (ev.Target.Role == RoleTypeId.Scp0492)
+                ev.Target.SetRole(RoleTypeId.Spectator);
+        });
+        ev.Target.SendBroadcast($"<size=36>[ZombieOptOut] You've opted out of being revived as a zombie in your Settings!</size>", 5);
+        optedOutPlayer = ev.Target;
 
-            if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptIn))
-                return;
+        foreach (Player player in Player.ReadyList)
+        {
+            if (player == ev.Target)
+                continue;
 
-            if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptInAndFill))
-                return;
+            if (player.IsDummy)
+                continue;
 
-            if (ZombieOptOut.Main.Instance.Config.EnableSimpleCustomRolesSupport)
-            {
+            if (player.IsAlive)
+                continue;
 
-                if (ServerSpecificSettings.savedSettings[refHub] != ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptOutFully))
-                {
-                    if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
-                        return;
-                }
-                else
-                {
-                    if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
-                        SimpleCustomRoles.Helpers.CustomRoleHelpers.GetPlayerAndRoles().TryGetValue(ev.Target, out savedCustomRole);
-                }
-            }
+            if (player == null)
+                continue;
 
-            ev.Target.SetRole(RoleTypeId.Spectator);
-            ev.Target.SendBroadcast($"<size=36>[ZombieOptOut] You've opted out of being revived as a zombie in your Settings!</size>", 5);
-            optedOutPlayer = ev.Target;
+            ReferenceHub listHub = player.ReferenceHub;
 
-            foreach (Player player in Player.ReadyList)
-            {
-                if (player.IsDummy)
-                    continue;
+            if (listHub == null)
+                continue;
 
-                if (player.IsAlive)
-                    continue;
+            if (ServerSpecificSettings.savedSettings[listHub].Item2 == true)
+                continue;
 
-                if (player == null)
-                    continue;
-
-                ReferenceHub listHub = player.ReferenceHub;
-
-                if (listHub == null)
-                    continue;
-
-                if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptInAndFill))
-                    continue;
-
-                ev.Player.SendBroadcast($"<size=36>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Opted out of being revived and has been replaced with <b>{player.DisplayName}</b></size>", 5);
-                RoleFill(player);
-                return;
-            }
-
-            CL.Info("No players had Auto-Fill enabled!");
-            ClampedCompensation();
-
-            foreach (Player player in Player.ReadyList)
-            {
-                if (player == optedOutPlayer)
-                    continue;
-
-                if (player.IsAlive)
-                    continue;
-
-                if (player.IsDummy)
-                    continue;
-
-                player.SendBroadcast($"<size=40>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Has opted out of being a zombie, you can take their spot!\n</size><size=34>By typing <b>.optin</b> in your console (`)!</size>", 5);
-            }
-
-            Timing.CallDelayed(ZombieOptOut.Main.Instance.Config.FillDuration, () =>
-            {
-                if (waitingForCompensationFrom != 0)
-                {
-                    foreach (Player player in Player.ReadyList)
-                    {
-                        if (player.Role != RoleTypeId.Scp049)
-                            continue;
-
-                        player.Heal(ZombieOptOut.Main.Instance.Config.HealthCompensation);
-                        player.SendBroadcast($"<size=36>[ZombieOptOut] You were compenstaed for a zombie opting out with <b>+{ZombieOptOut.Main.Instance.Config.HealthCompensation}HP</b></size>", 5);
-                    }
-
-                    ClampedCompensation(-1);
-                }
-            });
+            ev.Player.SendBroadcast($"<size=36>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Opted out of being revived and has been replaced with <b>{player.DisplayName}</b></size>", 5);
+            RoleFill(player);
+            return;
         }
 
-        public static void RoleFill(Player player)
+        CL.Info("No players had Auto-Fill enabled!");
+        ClampedCompensation();
+
+        foreach (Player player in Player.ReadyList)
         {
-            CL.Info($"Player {player.DisplayName} Auto-Filled!");
-            player.SetRole(RoleTypeId.Scp0492, RoleChangeReason.Revived);
-            Timing.CallDelayed(0.5f, () => player.Position = main049Player.Position);
-            ClampedCompensation(-1);
+            if (player == optedOutPlayer)
+                continue;
 
-            if (savedCustomRole == null)
-                return;
+            if (player.IsAlive)
+                continue;
 
+            if (player.IsDummy)
+                continue;
+
+            player.SendBroadcast($"<size=40>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Has opted out of being a zombie, you can take their spot!\n</size><size=34>By typing <b>.optin</b> in your console (`)!</size>", 5);
+        }
+
+        Timing.CallDelayed(ZombieOptOut.Main.Instance.Config.FillDuration, () =>
+        {
+            if (waitingForCompensationFrom != 0)
+            {
+                foreach (Player player in Player.ReadyList)
+                {
+                    if (player.Role != RoleTypeId.Scp049)
+                        continue;
+
+                    player.Heal(ZombieOptOut.Main.Instance.Config.HealthCompensation);
+                    player.SendBroadcast($"<size=36>[ZombieOptOut] You were compenstaed for a zombie opting out with <b>+{ZombieOptOut.Main.Instance.Config.HealthCompensation}HP</b></size>", 5);
+                }
+
+                ClampedCompensation(-1);
+            }
+        });
+    }
+
+    public static void RoleFill(Player player)
+    {
+        CL.Info($"Player {player.DisplayName} Auto-Filled!");
+        player.SetRole(RoleTypeId.Scp0492, RoleChangeReason.Revived);
+        Timing.CallDelayed(0.5f, () => player.Position = main049Player.Position);
+        ClampedCompensation(-1);
+
+        if (savedCustomRole != null)
             Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
+    }
 
-        }
-
-        private static void ClampedCompensation(int value = 1)
-        {
-            waitingForCompensationFrom = (uint)(Mathf.Clamp(waitingForCompensationFrom + value, 0, 50));
-        }
+    private static void ClampedCompensation(int value = 1)
+    {
+        waitingForCompensationFrom = (uint)(Mathf.Clamp(waitingForCompensationFrom + value, 0, 50));
     }
 }

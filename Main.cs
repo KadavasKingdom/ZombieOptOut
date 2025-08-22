@@ -1,6 +1,4 @@
-﻿using LabApi.Events.Arguments.Scp049Events;
-using LabApi.Events.Handlers;
-using LabApi.Loader.Features.Plugins;
+﻿using LabApi.Loader.Features.Plugins;
 using LabApi.Loader.Features.Plugins.Enums;
 
 namespace ZombieOptOut;
