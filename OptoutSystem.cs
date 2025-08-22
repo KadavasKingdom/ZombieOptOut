@@ -19,33 +19,26 @@ public class OptOutSystem
         main049Player = ev.Player;
         ReferenceHub refHub = ev.Target.ReferenceHub;
 
-        if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptIn))
+        if (ServerSpecificSettings.savedSettings[refHub].Item1 == false)
             return;
 
-        if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptInAndFill))
-            return;
-
-        if (ZombieOptOut.Main.Instance.Config.EnableSimpleCustomRolesSupport)
-        {
-
-            if (ServerSpecificSettings.savedSettings[refHub] != ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptOutFully))
-            {
-                if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
-                    return;
-            }
-            else
-            {
-                if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
-                    SimpleCustomRoles.Helpers.CustomRoleHelpers.GetPlayerAndRoles().TryGetValue(ev.Target, out savedCustomRole);
-            }
-        }
+        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
+            SimpleCustomRoles.Helpers.CustomRoleHelpers.GetPlayerAndRoles().TryGetValue(ev.Target, out savedCustomRole);
 
         ev.Target.SetRole(RoleTypeId.Spectator);
+        Timing.CallDelayed(1.5f, () =>
+        {
+            if (ev.Target.Role == RoleTypeId.Scp0492)
+                ev.Target.SetRole(RoleTypeId.Spectator);
+        });
         ev.Target.SendBroadcast($"<size=36>[ZombieOptOut] You've opted out of being revived as a zombie in your Settings!</size>", 5);
         optedOutPlayer = ev.Target;
 
         foreach (Player player in Player.ReadyList)
         {
+            if (player == ev.Target)
+                continue;
+
             if (player.IsDummy)
                 continue;
 
@@ -60,7 +53,7 @@ public class OptOutSystem
             if (listHub == null)
                 continue;
 
-            if (ServerSpecificSettings.savedSettings[refHub] == ((int)ZombieOptOut.ServerSpecificSettings.OptOutType.OptInAndFill))
+            if (ServerSpecificSettings.savedSettings[listHub].Item2 == true)
                 continue;
 
             ev.Player.SendBroadcast($"<size=36>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Opted out of being revived and has been replaced with <b>{player.DisplayName}</b></size>", 5);
@@ -110,11 +103,8 @@ public class OptOutSystem
         Timing.CallDelayed(0.5f, () => player.Position = main049Player.Position);
         ClampedCompensation(-1);
 
-        if (savedCustomRole == null)
-            return;
-
-        Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
-
+        if (savedCustomRole != null)
+            Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
     }
 
     private static void ClampedCompensation(int value = 1)
