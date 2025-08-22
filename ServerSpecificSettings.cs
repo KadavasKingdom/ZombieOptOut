@@ -7,19 +7,26 @@ namespace ZombieOptOut
         public static SSTwoButtonsSetting optOutButton;
         public static SSTwoButtonsSetting autoFillButton;
         public static Dictionary<ReferenceHub, (bool /* optOut */, bool /* fill */)> savedSettings = [];
+        static ServerSpecificSettingBase[] Settings;
 
         public static void Initialize()
         {
             optOutButton = new SSTwoButtonsSetting(null, "Opt-out of being a Zombie", "True", "False", defaultIsB: true);
             autoFillButton = new SSTwoButtonsSetting(null, "Auto-Fill for opted-out Zombies", "True", "False", defaultIsB: true);
-            var settings = new List<ServerSpecificSettingBase>
-                    {
-                        new SSGroupHeader("Zombie Opt-out", false),
-                        optOutButton,
-                        autoFillButton
-                    };
+            Settings =
+            [
+                new SSGroupHeader("Zombie Opt-out", false),
+                optOutButton,
+                autoFillButton
+            ];
 
-            ServerSpecificSettingsSync.DefinedSettings = settings.ToArray();
+            List<ServerSpecificSettingBase> settingBases = [];
+            if (ServerSpecificSettingsSync.DefinedSettings != null)
+            {
+                settingBases = [.. ServerSpecificSettingsSync.DefinedSettings];
+            }
+            settingBases.AddRange(Settings);
+            ServerSpecificSettingsSync.DefinedSettings = [.. settingBases];
             ServerSpecificSettingsSync.ServerOnSettingValueReceived += ServerOnSettingValueReceived;
             ServerSpecificSettingsSync.SendToAll();
         }
