@@ -53,7 +53,7 @@ public class OptOutSystem
             if (listHub == null)
                 continue;
 
-            if (ServerSpecificSettings.savedSettings[listHub].Item2 == true)
+            if (ServerSpecificSettings.savedSettings[listHub].Item2 != true)
                 continue;
 
             ev.Player.SendBroadcast($"<size=36>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Opted out of being revived and has been replaced with <b>{player.DisplayName}</b></size>", 5);
