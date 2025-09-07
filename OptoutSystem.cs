@@ -21,7 +21,7 @@ public class OptOutSystem
 
         if (ServerSpecificSettings.savedSettings[refHub].Item1 == false)
             return;
-      
+
         Timing.CallDelayed(1f, () =>
         {
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
@@ -35,7 +35,7 @@ public class OptOutSystem
                 ev.Target.SetRole(RoleTypeId.Spectator);
         });
 
-        
+
         optedOutPlayer = ev.Target;
 
         foreach (Player player in Player.ReadyList)
@@ -109,9 +109,17 @@ public class OptOutSystem
 
         Timing.CallDelayed(1.5f, () =>
         {
-            if (savedCustomRole != null)
-                Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
+            if (savedCustomRole == null)
+                return;
+
+            Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
+            savedCustomRole = null;
         });
+    }
+
+    internal static void RoundStart()
+    {
+        savedCustomRole = null;
     }
 
     private static void ClampedCompensation(int value = 1)
