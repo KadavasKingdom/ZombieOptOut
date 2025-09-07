@@ -19,7 +19,6 @@ public class Main : Plugin<Config>
         Instance = this;
 
         LabApi.Events.Handlers.Scp049Events.ResurrectedBody += OptOutSystem.RevivedZombie;
-        LabApi.Events.Handlers.ServerEvents.RoundStarted += OptOutSystem.RoundStart;
         ServerSpecificSettings.Initialize();
     }
     public override void Disable()
@@ -27,7 +26,6 @@ public class Main : Plugin<Config>
         Instance = null;
 
         LabApi.Events.Handlers.Scp049Events.ResurrectedBody -= OptOutSystem.RevivedZombie;
-        LabApi.Events.Handlers.ServerEvents.RoundStarted -= OptOutSystem.RoundStart;
         ServerSpecificSettings.DeInitialize();
     }
 }

@@ -55,6 +55,9 @@
 	<ItemGroup>
 		<None Remove=".*;*.md;LICENSE" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="3rdparty\" />
+	</ItemGroup>
 
 	<Import Project="ReferencePaths.props.user" Condition="Exists('ReferencePaths.props.user')" />
 	<PropertyGroup>

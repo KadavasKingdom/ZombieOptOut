@@ -1,7 +1,6 @@
 ﻿using LabApi.Events.Arguments.Scp049Events;
 using MEC;
 using PlayerRoles;
-using SimpleCustomRoles.RoleYaml;
 using UnityEngine;
 
 
@@ -12,7 +11,6 @@ public class OptOutSystem
     public static uint waitingForCompensationFrom = 0;
     private static Player optedOutPlayer = null;
     private static Player main049Player = null;
-    private static CustomRoleBaseInfo savedCustomRole = null;
 
     public static void RevivedZombie(Scp049ResurrectedBodyEventArgs ev)
     {
@@ -24,12 +22,7 @@ public class OptOutSystem
 
         Timing.CallDelayed(1f, () =>
         {
-            if (SimpleCustomRoles.Helpers.CustomRoleHelpers.Contains(ev.Target))
-            {
-                SimpleCustomRoles.Helpers.CustomRoleHelpers.GetPlayerAndRoles().TryGetValue(ev.Target, out savedCustomRole);
-                CL.Info("Custom role saved: " + savedCustomRole.Rolename);
-            }
-
+         
             ev.Target.SendBroadcast($"<size=36>[ZombieOptOut] You've opted out of being revived as a zombie in your Settings!</size>", 5);
             if (ev.Target.Role == RoleTypeId.Scp0492)
                 ev.Target.SetRole(RoleTypeId.Spectator);
@@ -107,19 +100,6 @@ public class OptOutSystem
         Timing.CallDelayed(0.5f, () => player.Position = main049Player.Position);
         ClampedCompensation(-1);
 
-        Timing.CallDelayed(1.5f, () =>
-        {
-            if (savedCustomRole == null)
-                return;
-
-            Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
-            savedCustomRole = null;
-        });
-    }
-
-    internal static void RoundStart()
-    {
-        savedCustomRole = null;
     }
 
     private static void ClampedCompensation(int value = 1)
