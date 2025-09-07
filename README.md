@@ -1,7 +1,7 @@
 # Zombie Opt-Out (LabAPI)
 ### With [Simple Custom Roles](https://github.com/SlejmUr/SCPSL_PluginCollection) support!
 
-Enables players to opt-out of playing as 049-2 in the settings and allows other spectators to take their spot! If no one fills in for an opted-out player, 049 recieves 200HP as compensation.
+Enables players to opt-out of playing as 049-2 in the settings and allows other spectators to take their spot! If no one fills in for an opted-out player, 049 recieves HP as compensation.
 
 Server Specific Settings (both are false by default):
 <img width="1022" height="156" alt="image" src="https://github.com/user-attachments/assets/69283940-0b99-4417-815f-5aca9b7c4157" />
