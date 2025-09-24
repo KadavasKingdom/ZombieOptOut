@@ -112,7 +112,7 @@ public class OptOutSystem
             if (savedCustomRole == null)
                 return;
 
-            Server.RunCommand($"/setoscr {savedCustomRole.Rolename} {player.PlayerId}");
+            Server.RunCommand($"/scr set {savedCustomRole.Rolename} {player.PlayerId}");
             savedCustomRole = null;
         });
     }
