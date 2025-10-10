@@ -43,6 +43,7 @@
 		<Reference Include="UnityEngine.CoreModule" Private="false" />
 		<Reference Include="UnityEngine.ParticleSystemModule" Private="false" />
 		<Reference Include="UnityEngine.PhysicsModule" Private="false" />
+		<Reference Include="XpSystem" />
 	</ItemGroup>
 	<!-- Usings globals -->
 	<ItemGroup>
