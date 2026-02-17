@@ -5,7 +5,7 @@ namespace ZombieOptOut.Command;
 
 [CommandHandler(typeof(ClientCommandHandler))]
 [CommandHandler(typeof(GameConsoleCommandHandler))]
-public class Commands : ICommand
+public class optin : ICommand
 {
     public string Command => "ZombieOptIn";
     public string[] Aliases => ["optin", "zombieoptin", "opt", "oi"];

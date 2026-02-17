@@ -4,7 +4,6 @@ using PlayerRoles;
 using SimpleCustomRoles.RoleYaml;
 using UnityEngine;
 
-
 namespace ZombieOptOut;
 
 public class OptOutSystem
