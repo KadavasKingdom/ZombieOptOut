@@ -4,7 +4,6 @@ using PlayerRoles;
 using SimpleCustomRoles.RoleYaml;
 using UnityEngine;
 
-
 namespace ZombieOptOut;
 
 public class OptOutSystem
@@ -82,7 +81,7 @@ public class OptOutSystem
             player.SendBroadcast($"<size=40>[ZombieOptOut] <b>{ev.Target.DisplayName}</b> Has opted out of being a zombie, you can take their spot!\n</size><size=34>By typing <b>.optin</b> in your console (`)!</size>", 5);
         }
 
-        Timing.CallDelayed(ZombieOptOut.Main.Instance.Config.FillDuration, () =>
+        Timing.CallDelayed(ZombieOptOut.Main.Instance.Config.ZombieFillDuration, () =>
         {
             if (waitingForCompensationFrom != 0)
             {

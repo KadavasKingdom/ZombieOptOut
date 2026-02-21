@@ -20,6 +20,10 @@ public class Main : Plugin<Config>
 
         LabApi.Events.Handlers.Scp049Events.ResurrectedBody += OptOutSystem.RevivedZombie;
         LabApi.Events.Handlers.ServerEvents.RoundStarted += OptOutSystem.RoundStart;
+        LabApi.Events.Handlers.ServerEvents.RoundStarted += AFKReplacement.OnServerRoundStarted;
+        LabApi.Events.Handlers.PlayerEvents.ChangingRole += AFKReplacement.OnRoleChanging;
+        LabApi.Events.Handlers.PlayerEvents.UpdatingEffect += AFKReplacement.OnUpdatingEffects;
+        LabApi.Events.Handlers.PlayerEvents.Dying += AFKReplacement.OnPlayerDying;
         ServerSpecificSettings.Initialize();
     }
     public override void Disable()
@@ -28,6 +32,10 @@ public class Main : Plugin<Config>
 
         LabApi.Events.Handlers.Scp049Events.ResurrectedBody -= OptOutSystem.RevivedZombie;
         LabApi.Events.Handlers.ServerEvents.RoundStarted -= OptOutSystem.RoundStart;
+        LabApi.Events.Handlers.ServerEvents.RoundStarted -= AFKReplacement.OnServerRoundStarted;
+        LabApi.Events.Handlers.PlayerEvents.ChangingRole -= AFKReplacement.OnRoleChanging;
+        LabApi.Events.Handlers.PlayerEvents.UpdatingEffect -= AFKReplacement.OnUpdatingEffects;
+        LabApi.Events.Handlers.PlayerEvents.Dying -= AFKReplacement.OnPlayerDying;
         ServerSpecificSettings.DeInitialize();
     }
 }
