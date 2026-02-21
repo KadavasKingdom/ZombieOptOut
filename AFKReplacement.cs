@@ -63,7 +63,6 @@ public class AFKReplacement
 
     internal static void OnPlayerDying(PlayerDyingEventArgs ev)
     {
-        CL.Info("ded");
         if (ev.Player.Role.IsScp() && ev.Player.Role != RoleTypeId.Scp0492)
         {
             if (ev.Attacker != null)
