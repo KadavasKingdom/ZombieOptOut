@@ -1,5 +1,4 @@
 using CommandSystem;
-using PlayerRoles;
 using RemoteAdmin;
 
 namespace ZombieOptOut.Command;
@@ -15,8 +14,6 @@ public class fill : ICommand
 
     public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {
-        response = null;
-
         if (sender is not PlayerCommandSender)
         {
             response = "This command can only be ran by a player!";
@@ -37,14 +34,20 @@ public class fill : ICommand
             return false;
         }
 
-        if (!SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _) || player.Role == RoleTypeId.Spectator)
+        if (AFKReplacement.offendingPlayers.Contains(player.IpAddress))
         {
-            AFKReplacement.OnFilling(player);
-            response = "You've filled a role, thankyou!";
-            return true;
+            response = "You're blacklisted from replacing SCP's this round.";
+            return false;
         }
-            
-        response = "You can't fill as a Custom Role!";
-        return false;
+
+        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
+        {
+            response = "You have a custom role, so cannot replace SCP's right now!";
+            return false;
+        }
+
+        AFKReplacement.OnFilling(player);
+        response = "You've filled a role, thankyou!";
+        return true;
     }
 }

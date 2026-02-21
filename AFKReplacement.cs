@@ -1,24 +1,26 @@
 ﻿using CustomPlayerEffects;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
+using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
 using SimpleCustomRoles.RoleYaml;
+using Utils.NonAllocLINQ;
 
 namespace ZombieOptOut;
 
 public class AFKReplacement
 {
     private static bool withinRoundStart = true;
-    public static float health = 0;
     public static Dictionary<RoleTypeId, CustomRoleBaseInfo> cachedCustomRole = new Dictionary<RoleTypeId, CustomRoleBaseInfo>();
     public static Dictionary<RoleTypeId, float> disconnectedRoleQueue = new Dictionary<RoleTypeId, float>();
     public static bool canReplace = false;
+    //Uses IP instead of player info directly, otherwise references would be lost on disconnect
+    public static List<string> offendingPlayers = null;
     private static PlayerChangingRoleEventArgs cachedArgs;
     private static CoroutineHandle fillTimerCoroutine;
 
     //TODO: Queue disconnected players and roles, framework is already mostly in place
-    //TODO: Prevent disconnected player from replacing their own role
 
     public static void OnServerRoundStarted()
     {
@@ -28,6 +30,8 @@ public class AFKReplacement
         withinRoundStart = true;
         canReplace = false;
         cachedCustomRole.Clear();
+        offendingPlayers.Clear();
+        disconnectedRoleQueue.Clear();
 
         Timing.CallDelayed(Main.Instance.Config.AFKReplacementValidTime, () => withinRoundStart = false);
     }
@@ -77,6 +81,8 @@ public class AFKReplacement
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
+            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP [-500]</b>", "red");
+            offendingPlayers.AddIfNotContains(ev.Player.IpAddress);
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
@@ -97,6 +103,8 @@ public class AFKReplacement
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
+            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
+            offendingPlayers.AddIfNotContains(ev.Player.IpAddress);
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
@@ -162,11 +170,13 @@ public class AFKReplacement
         }
 
 
-        return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing<b>.fill</b> in your console(`)!</size>");
+        return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing <b>.fill</b> in your console(`)!</size>");
     }
 
     public static void OnFilling(Player fillingPlayer)
     {
+        canReplace = false;
+
         fillingPlayer.SetRole(cachedCustomRole.LastOrDefault().Key);
 
         if (cachedCustomRole.LastOrDefault().Value != null)
@@ -174,18 +184,18 @@ public class AFKReplacement
 
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {cachedCustomRole.LastOrDefault().Key} has been replaced!", 5);
+        XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
 
         Timing.CallDelayed(2.5f, () =>
         {
             if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
                 fillingPlayer.Health = disconnectedRoleQueue.LastOrDefault().Value;
+
+            disconnectedRoleQueue.Clear();
         });
 
         if (fillTimerCoroutine != null || fillTimerCoroutine.IsValid)
             Timing.KillCoroutines(fillTimerCoroutine);
-
-        disconnectedRoleQueue.Clear();
-        canReplace = false;
     }
 
     private static IEnumerator<float> fillTimeout()
