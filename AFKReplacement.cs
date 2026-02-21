@@ -16,6 +16,8 @@ public class AFKReplacement
     private static PlayerChangingRoleEventArgs cachedArgs;
     private static CoroutineHandle fillTimerCoroutine;
 
+    //TODO: Queue disconnected players and roles, framework is already mostly in place
+
     public static void OnServerRoundStarted()
     {
         if (!Main.Instance.Config.AFKReplacement)
@@ -50,16 +52,13 @@ public class AFKReplacement
                 cachedCustomRole.Add(cachedArgs.NewRole, savedCustomRole);
             else
                 cachedCustomRole.Add(cachedArgs.NewRole, null);
-
-            CL.Info($"Custom role cached: {savedCustomRole.Rolename}");
         }
 
         //Runs when a player disconnects or dies (SCP -> Spectator)
         if (cachedArgs.NewRole == RoleTypeId.Spectator && cachedArgs.OldRole.RoleTypeId.IsScp() && cachedArgs.OldRole.RoleTypeId != RoleTypeId.Scp0492 && !cachedArgs.Player.TryGetEffect<PitDeath>(out _))
         {
-            health = cachedArgs.Player.Health;
-            canReplace = true;
-            CL.Info($"Health cached: {health}");
+            CL.Info("Not a pit death");
+            CacheHealth(ev.Player);
         }
     }
 
@@ -73,11 +72,22 @@ public class AFKReplacement
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
-            health = ev.Player.Health;
-            CL.Info($"[Effect] Health cached: {health}");
+            CacheHealth(ev.Player);
         }
     }
 
+    private static void CacheHealth(Player player)
+    {
+        health = player.Health;
+        CL.Info($"Health cached: {health}");
+        canReplace = true;
+
+        //Health is 0 when they die and 200 when they disconnect, setting it to -1 here so we don't bother changing health in the future if the role is filled
+        if ((int)health == 0 || (int)health == 200)
+        {
+            health = -1f;
+        }
+    }
 
     // ADD DUMMY DETECTION
     public static void OnPlayerLeft(PlayerLeftEventArgs ev)
@@ -111,9 +121,9 @@ public class AFKReplacement
                     continue;
 
                 //TODO Detect if its a custom role and alter message
-                CL.Info($"<size=40>[AFK Replacement] <b>{cachedCustomRole.LastOrDefault().Key} ({cachedCustomRole.LastOrDefault().Value.Rolename} | {health}hp)</b> has disconnected!\n</size><size=34>You can take their spot by typing <b>.fill</b> in your console (`)!</size>");
+                CL.Info(MakeBroadcast());
                 player.ClearBroadcasts();
-                player.SendBroadcast($"<size=40>[AFK Replacement] <b>{cachedCustomRole.LastOrDefault().Key} ({cachedCustomRole.LastOrDefault().Value.Rolename} | {health}hp)</b> has disconnected!\n</size><size=34>You can take their spot by typing <b>.fill</b> in your console (`)!</size>", 5);
+                player.SendBroadcast(MakeBroadcast(), 5);
             }
 
             if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
@@ -121,6 +131,27 @@ public class AFKReplacement
 
             fillTimerCoroutine = Timing.RunCoroutine(fillTimeout());
         });
+    }
+
+    private static string MakeBroadcast()
+    {
+        string broadcast = $"<size=40>[AFK Replacement] <b>{cachedCustomRole.LastOrDefault().Key}</b>";
+
+        if (cachedCustomRole.LastOrDefault().Value == null)
+        {
+            if (health != -1f)
+                broadcast += $" ({health}hp) ";
+        }
+        else
+        {
+            if (health != -1f)
+                broadcast += $" ({cachedCustomRole.LastOrDefault().Value.Rolename} | {health}hp) ";
+            else
+                broadcast += $" ({cachedCustomRole.LastOrDefault().Value.Rolename}) ";
+        }
+
+
+        return broadcast += "has disconnected!\n </size ><size=34> You can take their spot by typing<b>.fill</b> in your console(`)!</size>";
     }
 
     public static void OnFilling(Player fillingPlayer)
@@ -133,7 +164,11 @@ public class AFKReplacement
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {cachedCustomRole.LastOrDefault().Key} has been replaced!", 5);
 
-        Timing.CallDelayed(2.5f, () => fillingPlayer.Health = health);
+        Timing.CallDelayed(2.5f, () =>
+        {
+            if (health != -1f)
+                fillingPlayer.Health = health;
+        });
 
         if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
             Timing.KillCoroutines(fillTimerCoroutine);
@@ -148,6 +183,4 @@ public class AFKReplacement
         cachedCustomRole.Clear();
         canReplace = false;
     }
-
-
 }
