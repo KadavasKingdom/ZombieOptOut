@@ -96,8 +96,6 @@ public class AFKReplacement
         if (ev.Player.IsDummy)
             return;
 
-        CL.Info($"Effect: {ev.Effect.name}");
-
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
@@ -130,8 +128,6 @@ public class AFKReplacement
 
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
                 continue;
-
-            CL.Info($"Sending AFK Replacement message to {player.Nickname}");
 
             if (player.IsDummy)
                 continue;
