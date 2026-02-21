@@ -1,4 +1,5 @@
-﻿using LabApi.Events.Arguments.PlayerEvents;
+﻿using CustomPlayerEffects;
+using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
 using MEC;
 using PlayerRoles;
@@ -38,26 +39,45 @@ public class AFKReplacement
             return;
 
         //Caches custom role when it initially spawns (Anything -> SCP)
-        if(cachedArgs.NewRole.IsScp() && cachedArgs.NewRole != RoleTypeId.Scp0492)
+        if (cachedArgs.NewRole.IsScp() && cachedArgs.NewRole != RoleTypeId.Scp0492)
         {
             CustomRoleBaseInfo savedCustomRole = null;
 
+            if (cachedCustomRole.ContainsKey(cachedArgs.NewRole))
+                cachedCustomRole.Remove(cachedArgs.NewRole);
+
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(cachedArgs.Player, out savedCustomRole))
-                cachedCustomRole.Add(cachedArgs.OldRole.RoleTypeId, savedCustomRole);
+                cachedCustomRole.Add(cachedArgs.NewRole, savedCustomRole);
             else
-                cachedCustomRole.Add(cachedArgs.OldRole.RoleTypeId, null);
+                cachedCustomRole.Add(cachedArgs.NewRole, null);
 
             CL.Info($"Custom role cached: {savedCustomRole.Rolename}");
         }
 
         //Runs when a player disconnects or dies (SCP -> Spectator)
-        if (cachedArgs.NewRole == RoleTypeId.Spectator && cachedArgs.OldRole.RoleTypeId.IsScp() && cachedArgs.OldRole.RoleTypeId != RoleTypeId.Scp0492)
+        if (cachedArgs.NewRole == RoleTypeId.Spectator && cachedArgs.OldRole.RoleTypeId.IsScp() && cachedArgs.OldRole.RoleTypeId != RoleTypeId.Scp0492 && !cachedArgs.Player.TryGetEffect<PitDeath>(out _))
         {
             health = cachedArgs.Player.Health;
             canReplace = true;
             CL.Info($"Health cached: {health}");
         }
     }
+
+    //Caches health if the player suicides off the map
+    internal static void OnUpdatingEffects(PlayerEffectUpdatingEventArgs ev)
+    {
+        if (!ev.Player.Role.IsScp())
+            return;
+
+        CL.Info($"Effect: {ev.Effect.name}");
+
+        if (ev.Effect.name.ToLower() == "pitdeath")
+        {
+            health = ev.Player.Health;
+            CL.Info($"[Effect] Health cached: {health}");
+        }
+    }
+
 
     // ADD DUMMY DETECTION
     public static void OnPlayerLeft(PlayerLeftEventArgs ev)
@@ -79,7 +99,7 @@ public class AFKReplacement
 
             foreach (Player player in Player.ReadyList)
             {
-                if(player.IsSCP)
+                if (player.IsSCP)
                     continue;
 
                 if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
@@ -96,7 +116,7 @@ public class AFKReplacement
                 player.SendBroadcast($"<size=40>[AFK Replacement] <b>{cachedCustomRole.LastOrDefault().Key} ({cachedCustomRole.LastOrDefault().Value.Rolename} | {health}hp)</b> has disconnected!\n</size><size=34>You can take their spot by typing <b>.fill</b> in your console (`)!</size>", 5);
             }
 
-            if(fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
+            if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
                 Timing.KillCoroutines(fillTimerCoroutine);
 
             fillTimerCoroutine = Timing.RunCoroutine(fillTimeout());
@@ -128,4 +148,6 @@ public class AFKReplacement
         cachedCustomRole.Clear();
         canReplace = false;
     }
+
+
 }

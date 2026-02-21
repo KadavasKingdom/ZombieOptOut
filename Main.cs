@@ -23,6 +23,7 @@ public class Main : Plugin<Config>
         LabApi.Events.Handlers.PlayerEvents.Left += AFKReplacement.OnPlayerLeft;
         LabApi.Events.Handlers.ServerEvents.RoundStarted += AFKReplacement.OnServerRoundStarted;
         LabApi.Events.Handlers.PlayerEvents.ChangingRole += AFKReplacement.OnRoleChanging;
+        LabApi.Events.Handlers.PlayerEvents.UpdatingEffect += AFKReplacement.OnUpdatingEffects;
         ServerSpecificSettings.Initialize();
     }
     public override void Disable()
@@ -34,6 +35,7 @@ public class Main : Plugin<Config>
         LabApi.Events.Handlers.PlayerEvents.Left -= AFKReplacement.OnPlayerLeft;
         LabApi.Events.Handlers.ServerEvents.RoundStarted -= AFKReplacement.OnServerRoundStarted;
         LabApi.Events.Handlers.PlayerEvents.ChangingRole -= AFKReplacement.OnRoleChanging;
+        LabApi.Events.Handlers.PlayerEvents.UpdatingEffect -= AFKReplacement.OnUpdatingEffects;
         ServerSpecificSettings.DeInitialize();
     }
 }
