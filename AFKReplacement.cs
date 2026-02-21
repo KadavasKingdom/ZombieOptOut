@@ -1,10 +1,8 @@
 ﻿using CustomPlayerEffects;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
-using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
-using PlayerStatsSystem;
 using SimpleCustomRoles.RoleYaml;
 
 namespace ZombieOptOut;
@@ -58,9 +56,6 @@ public class AFKReplacement
             else
                 cachedCustomRole.Add(cachedArgs.NewRole, null);
         }
-
-        //Runs when a player disconnects or dies (SCP -> Spectator) and caches health if they die by pit death
-        
     }
 
     internal static void OnPlayerDying(PlayerDyingEventArgs ev)
@@ -99,6 +94,9 @@ public class AFKReplacement
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
+            if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
+                disconnectedRoleQueue.Remove(ev.Player.Role);
+
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
@@ -141,12 +139,9 @@ public class AFKReplacement
     {
         //Health is 0 when they die and 200 when they disconnect, setting it to -1 here so we don't bother changing health in the future if the role is filled
         if ((int)player.Health == 0 || (int)player.Health == 200)
-            health = -1f;
+            return -1f;
         else
-            health = player.Health;
-
-        CL.Info($"Health cached: {health}");
-        return health;
+            return player.Health;
     }
 
     private static string MakeBroadcast()
@@ -155,15 +150,15 @@ public class AFKReplacement
 
         if (cachedCustomRole.LastOrDefault().Value == null)
         {
-            if (health != -1f)
-                broadcast += $" ({health}hp) ";
+            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
+                broadcast += $" ({disconnectedRoleQueue.LastOrDefault().Value}hp) ";
         }
         else
         {
-            if (health != -1f)
-                broadcast += $" ({cachedCustomRole.LastOrDefault().Value.Rolename} | {health}hp) ";
+            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename} | {disconnectedRoleQueue.LastOrDefault().Value}hp) ";
             else
-                broadcast += $" ({cachedCustomRole.LastOrDefault().Value.Rolename}) ";
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename}) ";
         }
 
 
@@ -175,30 +170,28 @@ public class AFKReplacement
         fillingPlayer.SetRole(cachedCustomRole.LastOrDefault().Key);
 
         if (cachedCustomRole.LastOrDefault().Value != null)
-            Timing.CallDelayed(0.5f, () => Server.RunCommand($"/scr set {cachedCustomRole.LastOrDefault().Value.Rolename} {fillingPlayer.PlayerId}"));
+            Timing.CallDelayed(0.5f, () => Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename} {fillingPlayer.PlayerId}"));
 
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {cachedCustomRole.LastOrDefault().Key} has been replaced!", 5);
 
         Timing.CallDelayed(2.5f, () =>
         {
-            if (health != -1f)
-                fillingPlayer.Health = health;
+            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
+                fillingPlayer.Health = disconnectedRoleQueue.LastOrDefault().Value;
         });
 
         if (fillTimerCoroutine != null || fillTimerCoroutine.IsValid)
             Timing.KillCoroutines(fillTimerCoroutine);
 
-        cachedCustomRole.Clear();
+        disconnectedRoleQueue.Clear();
         canReplace = false;
     }
 
     private static IEnumerator<float> fillTimeout()
     {
-        yield return Timing.WaitForSeconds(15f);
-        cachedCustomRole.Clear();
+        yield return Timing.WaitForSeconds(Main.Instance.Config.SCPFillDuration);
+        disconnectedRoleQueue.Clear();
         canReplace = false;
     }
-
-    
 }
