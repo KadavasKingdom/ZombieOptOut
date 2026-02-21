@@ -14,6 +14,7 @@ public class fill : ICommand
 
     public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {
+
         if (sender is not PlayerCommandSender)
         {
             response = "This command can only be ran by a player!";

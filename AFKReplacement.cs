@@ -93,21 +93,22 @@ public class AFKReplacement
             return;
         if (!ev.Player.Role.IsScp())
             return;
-        if (ev.Player.IsDummy)
-            return;
+        /*if (ev.Player.IsDummy)
+            return;*/
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
-            if (Main.Instance.Config.DisableXPLoss)
+            disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
+
+            if (!Main.Instance.Config.DisableXPLoss)
                 XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
                 offendingPlayers.Add(ev.Player.IpAddress);
 
-            disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
     }
@@ -153,19 +154,19 @@ public class AFKReplacement
 
     private static string MakeBroadcast()
     {
-        string broadcast = $"<size=40>[AFK Replacement] <b>{cachedCustomRole.LastOrDefault().Key}</b>";
+        string broadcast = $"<size=40>[AFK Replacement] <b>{disconnectedRoleQueue.FirstOrDefault().Key}</b>";
 
-        if (cachedCustomRole.LastOrDefault().Value == null)
+        if (cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key] == null)
         {
-            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
-                broadcast += $" ({disconnectedRoleQueue.LastOrDefault().Value}hp) ";
+            if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
+                broadcast += $" ({disconnectedRoleQueue.FirstOrDefault().Value}hp) ";
         }
         else
         {
-            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
-                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename} | {disconnectedRoleQueue.LastOrDefault().Value}hp) ";
+            if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename} | {disconnectedRoleQueue.FirstOrDefault().Value}hp) ";
             else
-                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename}) ";
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename}) ";
         }
 
 
@@ -176,21 +177,25 @@ public class AFKReplacement
     {
         canReplace = false;
 
-        fillingPlayer.SetRole(cachedCustomRole.LastOrDefault().Key);
-
-        if (cachedCustomRole.LastOrDefault().Value != null)
-            Timing.CallDelayed(0.5f, () => Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.LastOrDefault().Key].Rolename} {fillingPlayer.PlayerId}"));
+        if (cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key] != null)
+        {
+            Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename} {fillingPlayer.PlayerId}");
+        }
+        else
+        {
+            fillingPlayer.SetRole(disconnectedRoleQueue.FirstOrDefault().Key);
+        }
 
         Server.ClearBroadcasts();
-        Server.SendBroadcast($"[AFK Replacement] {cachedCustomRole.LastOrDefault().Key} has been replaced!", 5);
+        Server.SendBroadcast($"[AFK Replacement] {disconnectedRoleQueue.FirstOrDefault().Key} has been replaced!", 5);
 
-        if (Main.Instance.Config.DisableXPLoss)
+        if (!Main.Instance.Config.DisableXPLoss)
             XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
 
-        Timing.CallDelayed(2.5f, () =>
+        Timing.CallDelayed(3f, () =>
         {
-            if (disconnectedRoleQueue.LastOrDefault().Value != -1f)
-                fillingPlayer.Health = disconnectedRoleQueue.LastOrDefault().Value;
+            if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
+                fillingPlayer.Health = disconnectedRoleQueue.FirstOrDefault().Value;
 
             disconnectedRoleQueue.Clear();
         });
