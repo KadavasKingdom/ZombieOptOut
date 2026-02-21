@@ -23,7 +23,7 @@ public class fill : ICommand
             return false;
         }
 
-        if (AFKReplacement.cachedCustomRole.Count == 0 || !AFKReplacement.canReplace)
+        if (AFKReplacement.disconnectedRoleQueue.Count == 0 || !AFKReplacement.canReplace)
         {
             response = "There's no roles to fill in for currently!";
             return false;

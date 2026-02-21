@@ -1,8 +1,10 @@
 ﻿using CustomPlayerEffects;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
+using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
+using PlayerStatsSystem;
 using SimpleCustomRoles.RoleYaml;
 
 namespace ZombieOptOut;
@@ -12,11 +14,13 @@ public class AFKReplacement
     private static bool withinRoundStart = true;
     public static float health = 0;
     public static Dictionary<RoleTypeId, CustomRoleBaseInfo> cachedCustomRole = new Dictionary<RoleTypeId, CustomRoleBaseInfo>();
+    public static Dictionary<RoleTypeId, float> disconnectedRoleQueue = new Dictionary<RoleTypeId, float>();
     public static bool canReplace = false;
     private static PlayerChangingRoleEventArgs cachedArgs;
     private static CoroutineHandle fillTimerCoroutine;
 
     //TODO: Queue disconnected players and roles, framework is already mostly in place
+    //TODO: Prevent disconnected player from replacing their own role
 
     public static void OnServerRoundStarted()
     {
@@ -34,13 +38,14 @@ public class AFKReplacement
     //Caching information before disconnect or when a main SCP spawns
     public static void OnRoleChanging(PlayerChangingRoleEventArgs ev)
     {
-        cachedArgs = ev;
-        CL.Info($"[OnRoleChanging] Player changing role event triggered for {cachedArgs.Player.Nickname} | New Role: {cachedArgs.NewRole} | Old Role: {cachedArgs.OldRole.RoleTypeId} | Health: {cachedArgs.Player.Health}");
-
+        if (!Main.Instance.Config.AFKReplacement)
+            return;
         if (!withinRoundStart)
             return;
 
-        //Caches custom role when it initially spawns (Anything -> SCP)
+        cachedArgs = ev;
+
+        //Caches custom role when it initially spawns (Anything -> SCP), needed to save custom role info
         if (cachedArgs.NewRole.IsScp() && cachedArgs.NewRole != RoleTypeId.Scp0492)
         {
             CustomRoleBaseInfo savedCustomRole = null;
@@ -54,17 +59,39 @@ public class AFKReplacement
                 cachedCustomRole.Add(cachedArgs.NewRole, null);
         }
 
-        //Runs when a player disconnects or dies (SCP -> Spectator)
-        if (cachedArgs.NewRole == RoleTypeId.Spectator && cachedArgs.OldRole.RoleTypeId.IsScp() && cachedArgs.OldRole.RoleTypeId != RoleTypeId.Scp0492 && !cachedArgs.Player.TryGetEffect<PitDeath>(out _))
+        //Runs when a player disconnects or dies (SCP -> Spectator) and caches health if they die by pit death
+        
+    }
+
+    internal static void OnPlayerDying(PlayerDyingEventArgs ev)
+    {
+        CL.Info("ded");
+        if (ev.Player.Role.IsScp() && ev.Player.Role != RoleTypeId.Scp0492)
         {
-            CL.Info("Not a pit death");
-            CacheHealth(ev.Player);
+            CL.Info($"PLAYER HAS DIED | Damage Handler: {ev.DamageHandler} | Attacker: {ev.Attacker} | Role {ev.Player.Role}");
+
+            if (ev.Attacker != null)
+                return;
+
+            CL.Info("No attacker");
+
+            //Handled by OnUpdatingEffects to gather health before the effect is applied
+            if (ev.Player.HasEffect<PitDeath>())
+                return;
+
+            if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
+                disconnectedRoleQueue.Remove(ev.Player.Role);
+
+            disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
+            AllowReplacement();
         }
     }
 
     //Caches health if the player suicides off the map
     internal static void OnUpdatingEffects(PlayerEffectUpdatingEventArgs ev)
     {
+        if (!Main.Instance.Config.AFKReplacement)
+            return;
         if (!ev.Player.Role.IsScp())
             return;
 
@@ -72,65 +99,54 @@ public class AFKReplacement
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
-            CacheHealth(ev.Player);
+            disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
+            AllowReplacement();
         }
     }
 
-    private static void CacheHealth(Player player)
+    private static void AllowReplacement()
     {
-        health = player.Health;
-        CL.Info($"Health cached: {health}");
+        if (!withinRoundStart)
+            return;
+        if (Warhead.IsDetonated)
+            return;
+
         canReplace = true;
 
-        //Health is 0 when they die and 200 when they disconnect, setting it to -1 here so we don't bother changing health in the future if the role is filled
-        if ((int)health == 0 || (int)health == 200)
+        foreach (Player player in Player.ReadyList)
         {
-            health = -1f;
+            if (player.IsSCP)
+                continue;
+
+            if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
+                continue;
+
+            CL.Info($"Sending AFK Replacement message to {player.Nickname}");
+
+            /*if (player.IsDummy)
+                continue;*/
+
+            CL.Info(MakeBroadcast());
+            player.ClearBroadcasts();
+            player.SendBroadcast(MakeBroadcast(), 5);
         }
+
+        if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
+            Timing.KillCoroutines(fillTimerCoroutine);
+
+        fillTimerCoroutine = Timing.RunCoroutine(fillTimeout());
     }
 
-    // ADD DUMMY DETECTION
-    public static void OnPlayerLeft(PlayerLeftEventArgs ev)
+    private static float CacheHealth(Player player)
     {
-        Timing.CallDelayed(0.2f, () =>
-        {
-            CL.Info($"[OnPlayerLeft] Player left event triggered for {ev.Player.Nickname} | Curr Role: {ev.Player.Role} | Prev Role: {ev.Player.ReferenceHub.roleManager.PreviouslySentRole.LastOrDefault().Value}");
+        //Health is 0 when they die and 200 when they disconnect, setting it to -1 here so we don't bother changing health in the future if the role is filled
+        if ((int)player.Health == 0 || (int)player.Health == 200)
+            health = -1f;
+        else
+            health = player.Health;
 
-            if (!Main.Instance.Config.AFKReplacement)
-                return;
-            if (cachedCustomRole.Count == 0)
-                return;
-
-            CL.Info($"Player {ev.Player.Nickname} left while being an SCP");
-
-            if (!withinRoundStart)
-                return;
-
-
-            foreach (Player player in Player.ReadyList)
-            {
-                if (player.IsSCP)
-                    continue;
-
-                if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
-                    continue;
-
-                CL.Info($"Sending AFK Replacement message to {player.Nickname}");
-
-                if (player.IsDummy)
-                    continue;
-
-                //TODO Detect if its a custom role and alter message
-                CL.Info(MakeBroadcast());
-                player.ClearBroadcasts();
-                player.SendBroadcast(MakeBroadcast(), 5);
-            }
-
-            if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
-                Timing.KillCoroutines(fillTimerCoroutine);
-
-            fillTimerCoroutine = Timing.RunCoroutine(fillTimeout());
-        });
+        CL.Info($"Health cached: {health}");
+        return health;
     }
 
     private static string MakeBroadcast()
@@ -151,7 +167,7 @@ public class AFKReplacement
         }
 
 
-        return broadcast += "has disconnected!\n </size ><size=34> You can take their spot by typing<b>.fill</b> in your console(`)!</size>";
+        return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing<b>.fill</b> in your console(`)!</size>");
     }
 
     public static void OnFilling(Player fillingPlayer)
@@ -170,7 +186,7 @@ public class AFKReplacement
                 fillingPlayer.Health = health;
         });
 
-        if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
+        if (fillTimerCoroutine != null || fillTimerCoroutine.IsValid)
             Timing.KillCoroutines(fillTimerCoroutine);
 
         cachedCustomRole.Clear();
@@ -183,4 +199,6 @@ public class AFKReplacement
         cachedCustomRole.Clear();
         canReplace = false;
     }
+
+    
 }
