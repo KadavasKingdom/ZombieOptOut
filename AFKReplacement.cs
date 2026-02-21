@@ -1,11 +1,9 @@
 ﻿using CustomPlayerEffects;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
-using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
 using SimpleCustomRoles.RoleYaml;
-using Utils.NonAllocLINQ;
 
 namespace ZombieOptOut;
 
@@ -16,7 +14,7 @@ public class AFKReplacement
     public static Dictionary<RoleTypeId, float> disconnectedRoleQueue = new Dictionary<RoleTypeId, float>();
     public static bool canReplace = false;
     //Uses IP instead of player info directly, otherwise references would be lost on disconnect
-    public static List<string> offendingPlayers = null;
+    public static List<string> offendingPlayers = new();
     private static PlayerChangingRoleEventArgs cachedArgs;
     private static CoroutineHandle fillTimerCoroutine;
 
@@ -36,13 +34,14 @@ public class AFKReplacement
         Timing.CallDelayed(Main.Instance.Config.AFKReplacementValidTime, () => withinRoundStart = false);
     }
 
-    // ADD DUMMY DETECTION
     //Caching information before disconnect or when a main SCP spawns
     public static void OnRoleChanging(PlayerChangingRoleEventArgs ev)
     {
         if (!Main.Instance.Config.AFKReplacement)
             return;
         if (!withinRoundStart)
+            return;
+        if (ev.Player.IsDummy)
             return;
 
         cachedArgs = ev;
@@ -67,14 +66,10 @@ public class AFKReplacement
         CL.Info("ded");
         if (ev.Player.Role.IsScp() && ev.Player.Role != RoleTypeId.Scp0492)
         {
-            CL.Info($"PLAYER HAS DIED | Damage Handler: {ev.DamageHandler} | Attacker: {ev.Attacker} | Role {ev.Player.Role}");
-
             if (ev.Attacker != null)
                 return;
-
-            CL.Info("No attacker");
-
-            //Handled by OnUpdatingEffects to gather health before the effect is applied
+            if (ev.Player.IsDummy)
+                return;
             if (ev.Player.HasEffect<PitDeath>())
                 return;
 
@@ -82,7 +77,10 @@ public class AFKReplacement
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
             XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP [-500]</b>", "red");
-            offendingPlayers.AddIfNotContains(ev.Player.IpAddress);
+
+            if (!offendingPlayers.Contains(ev.Player.IpAddress))
+                offendingPlayers.Add(ev.Player.IpAddress);
+
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
@@ -95,6 +93,8 @@ public class AFKReplacement
             return;
         if (!ev.Player.Role.IsScp())
             return;
+        if (ev.Player.IsDummy)
+            return;
 
         CL.Info($"Effect: {ev.Effect.name}");
 
@@ -104,7 +104,10 @@ public class AFKReplacement
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
             XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
-            offendingPlayers.AddIfNotContains(ev.Player.IpAddress);
+
+            if (!offendingPlayers.Contains(ev.Player.IpAddress))
+                offendingPlayers.Add(ev.Player.IpAddress);
+
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
             AllowReplacement();
         }
@@ -129,12 +132,11 @@ public class AFKReplacement
 
             CL.Info($"Sending AFK Replacement message to {player.Nickname}");
 
-            /*if (player.IsDummy)
-                continue;*/
+            if (player.IsDummy)
+                continue;
 
-            CL.Info(MakeBroadcast());
             player.ClearBroadcasts();
-            player.SendBroadcast(MakeBroadcast(), 5);
+            player.SendBroadcast(MakeBroadcast(), 10);
         }
 
         if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
@@ -170,7 +172,7 @@ public class AFKReplacement
         }
 
 
-        return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing <b>.fill</b> in your console(`)!</size>");
+        return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing <b>.fill</b> in your console (`)!</size>");
     }
 
     public static void OnFilling(Player fillingPlayer)
