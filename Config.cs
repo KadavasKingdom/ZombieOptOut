@@ -8,4 +8,5 @@ public sealed class Config
     public float SCPFillDuration { get; set; } = 15f;
     public float ZombieFillDuration { get; set; } = 10f;
     public float HealthCompensation { get; set; } = 200f;
+    public bool DisableXPLoss { get; set; } = true;
 }

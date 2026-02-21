@@ -76,7 +76,8 @@ public class AFKReplacement
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
-            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP [-500]</b>", "red");
+            if (Main.Instance.Config.DisableXPLoss)
+                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP [-500]</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
                 offendingPlayers.Add(ev.Player.IpAddress);
@@ -103,7 +104,8 @@ public class AFKReplacement
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
-            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
+            if (Main.Instance.Config.DisableXPLoss)
+                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
                 offendingPlayers.Add(ev.Player.IpAddress);
@@ -186,7 +188,9 @@ public class AFKReplacement
 
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {cachedCustomRole.LastOrDefault().Key} has been replaced!", 5);
-        XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
+
+        if (Main.Instance.Config.DisableXPLoss)
+            XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
 
         Timing.CallDelayed(2.5f, () =>
         {
