@@ -1,4 +1,8 @@
 # Zombie Opt-Out (LabAPI)
+### Now with SCP AFK/Suicide Fill!
+using the .fill command, players can fill for players who grief as SCP's, Simple Custom Roles required.
+
+
 ### With [Simple Custom Roles](https://github.com/SlejmUr/SCPSL_PluginCollection) support!
 
 Enables players to opt-out of playing as 049-2 in the settings and allows other spectators to take their spot! If no one fills in for an opted-out player, 049 recieves HP as compensation.
@@ -19,4 +23,3 @@ Server Specific Settings (both are false by default):
 
 ### How to install:
 Download the .dll from releases (if you don't use [Simple Custom Roles](https://github.com/SlejmUr/SCPSL_PluginCollection), download the vanilla version) and put it in your LabAPI->Plugins->Port folder.
-
