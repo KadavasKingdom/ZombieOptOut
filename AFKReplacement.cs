@@ -93,8 +93,8 @@ public class AFKReplacement
             return;
         if (!ev.Player.Role.IsScp())
             return;
-        /*if (ev.Player.IsDummy)
-            return;*/
+        if (ev.Player.IsDummy)
+            return;
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
