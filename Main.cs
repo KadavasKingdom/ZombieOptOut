@@ -1,4 +1,5 @@
-﻿using LabApi.Loader.Features.Plugins;
+﻿using LabApi.Loader;
+using LabApi.Loader.Features.Plugins;
 using LabApi.Loader.Features.Plugins.Enums;
 
 namespace ZombieOptOut;
@@ -37,5 +38,16 @@ public class Main : Plugin<Config>
         LabApi.Events.Handlers.PlayerEvents.UpdatingEffect -= AFKReplacement.OnUpdatingEffects;
         LabApi.Events.Handlers.PlayerEvents.Dying -= AFKReplacement.OnPlayerDying;
         ServerSpecificSettings.DeInitialize();
+    }
+
+    public override void LoadConfigs()
+    {
+        if (!this.TryLoadConfig(ConfigFileName, out Config config, true))
+        {
+            CL.Warn("Failed to load the configuration file, using default values.");
+            config = new Config();
+        }
+
+        Config = config;
     }
 }
