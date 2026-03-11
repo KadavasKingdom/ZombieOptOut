@@ -63,6 +63,9 @@ public class AFKReplacement
 
     internal static void OnPlayerDying(PlayerDyingEventArgs ev)
     {
+        if (!withinRoundStart)
+            return;
+
         if (ev.Player.Role.IsScp() && ev.Player.Role != RoleTypeId.Scp0492)
         {
             if (ev.Attacker != null)
@@ -76,7 +79,7 @@ public class AFKReplacement
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
             if (Main.Instance.Config.DisableXPLoss)
-                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP [-500]</b>", "red");
+                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
                 offendingPlayers.Add(ev.Player.IpAddress);
@@ -95,6 +98,8 @@ public class AFKReplacement
             return;
         if (ev.Player.IsDummy)
             return;
+        if (!withinRoundStart)
+            return;
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
@@ -104,7 +109,7 @@ public class AFKReplacement
             disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
 
             if (!Main.Instance.Config.DisableXPLoss)
-                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP [-500]</b>", "red");
+                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
                 offendingPlayers.Add(ev.Player.IpAddress);
