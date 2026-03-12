@@ -78,7 +78,7 @@ public class AFKReplacement
             if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
                 disconnectedRoleQueue.Remove(ev.Player.Role);
 
-            if (Main.Instance.Config.DisableXPLoss)
+            if (!Main.Instance.Config.DisableXPLoss)
                 XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Disconnected as an SCP</b>", "red");
 
             if (!offendingPlayers.Contains(ev.Player.IpAddress))
