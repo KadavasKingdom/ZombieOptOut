@@ -41,6 +41,8 @@ public class AFKReplacement
             return;
         if (!withinRoundStart)
             return;
+        if (ev.Player == null)
+            return;
         if (ev.Player.IsDummy)
             return;
 
