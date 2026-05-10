@@ -4,30 +4,26 @@ using RemoteAdmin;
 namespace ZombieOptOut.Command;
 
 [CommandHandler(typeof(ClientCommandHandler))]
-[CommandHandler(typeof(GameConsoleCommandHandler))]
-public class fill : ICommand
+public class Fill : ICommand
 {
     public string Command => "Fill";
-    public string[] Aliases => ["fill"];
+    public string[] Aliases => []; // commands are case-insensitive
     public string Description => "Replace a disconnected SCP";
-    public bool SanitizeResponse => true;
 
     public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {
-
-        if (sender is not PlayerCommandSender)
+        var player = Player.Get(sender);
+        if (sender is not PlayerCommandSender || player == null)
         {
             response = "This command can only be ran by a player!";
             return false;
         }
 
-        if (AFKReplacement.disconnectedRoleQueue.Count == 0 || !AFKReplacement.canReplace)
+        if (AFKReplacement.DisconnectedRoleQueue.Count == 0 || !AFKReplacement.CanReplace)
         {
             response = "There's no roles to fill in for currently!";
             return false;
         }
-
-        Player player = Player.Get(sender);
 
         if (player.IsSCP)
         {
@@ -35,20 +31,20 @@ public class fill : ICommand
             return false;
         }
 
-        if (AFKReplacement.offendingPlayers.Contains(player.IpAddress))
+        if (AFKReplacement.OffendingPlayers.Contains(player.UserId))
         {
             response = "You're blacklisted from replacing SCP's this round.";
             return false;
         }
 
-        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
+        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
         {
             response = "You have a custom role, so cannot replace SCP's right now!";
             return false;
         }
 
         AFKReplacement.OnFilling(player);
-        response = "You've filled a role, thankyou!";
+        response = "You've filled a role, thank you!";
         return true;
     }
 }
