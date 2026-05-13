@@ -32,9 +32,12 @@ public static class OptOutSystem
             return;
         
         var playerAndRoles = CustomRoleHelpers.GetPlayerAndRoles();
-        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) && playerAndRoles.TryGetValue(ev.Player, out var customRole) && customRole.Rolename.Contains("035"))
-            return;
         
+        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) 
+            && playerAndRoles.TryGetValue(ev.Player, out var customRole) 
+            && (Main.Instance.Config?.OptOutImmuneZombies.Any(role => customRole.Rolename.Contains(role)) ?? false)) 
+            return;
+
         _latest049Player = ev.Player.UserId;
         var refHub = ev.Target.ReferenceHub;
         

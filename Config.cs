@@ -1,4 +1,6 @@
-﻿namespace ZombieOptOut;
+﻿using System.ComponentModel;
+
+namespace ZombieOptOut;
 
 public sealed class Config
 {
@@ -12,4 +14,6 @@ public sealed class Config
     public int OptInExp { get; set; } = 100;
     public bool StackZombieCompensation { get; set; } = true;
     public bool UseCustomRoles { get; set; } = true;
+    [Description("List of zombie names to opt out of AFK replacement. Checks if the role name contains any of these strings.")]
+    public List<string> OptOutImmuneZombies { get; set; } = [];
 }
