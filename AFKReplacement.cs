@@ -15,8 +15,7 @@ public static class AFKReplacement
     public static Dictionary<RoleTypeId, float> DisconnectedRoleQueue = []; // RoleTypeId, Health
     public static bool CanReplace;
     //Uses UserId instead of player info directly, otherwise references would be lost on disconnect
-    private static HashSet<string> _offendingPlayers = [];
-    public static HashSet<string> OffendingPlayers => _offendingPlayers;
+    public static HashSet<string> OffendingPlayers = [];
     private static CoroutineHandle _fillTimerCoroutine;
 
     //TODO: Queue disconnected players and roles, framework is already mostly in place
@@ -29,7 +28,7 @@ public static class AFKReplacement
         _withinRoundStart = true;
         CanReplace = false;
         _cachedCustomRole.Clear();
-        _offendingPlayers.Clear();
+        OffendingPlayers.Clear();
         DisconnectedRoleQueue.Clear();
 
         Timing.CallDelayed(Main.Instance.Config?.AFKReplacementValidTime ?? Defaults.AFKReplacementValidTime, () => _withinRoundStart = false);
@@ -58,7 +57,7 @@ public static class AFKReplacement
             if (!Main.Instance.Config?.DisableXPLoss ?? Defaults.DisableXPLoss)
                 XPSystem.BackEnd.XpSystemAPI.AddXP(player, -500, "<b>Disconnected as an SCP</b>", "red");
             
-            _offendingPlayers.Add(player.UserId);
+            OffendingPlayers.Add(player.UserId);
             
             var cacheHealth = CacheHealth(player);
             var plrRole = player.Role;
@@ -108,7 +107,7 @@ public static class AFKReplacement
         if (!Main.Instance.Config?.DisableXPLoss ?? Defaults.DisableXPLoss)
             XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
         
-        _offendingPlayers.Add(ev.Player.UserId);
+        OffendingPlayers.Add(ev.Player.UserId);
         
         AllowReplacement(regularRole, cachedHealth);
     }
