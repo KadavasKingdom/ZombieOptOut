@@ -2,7 +2,7 @@
 using LabApi.Loader.Features.Plugins;
 using LabApi.Loader.Features.Plugins.Enums;
 using HarmonyLib;
-using LabApi.Events.Handlers;
+using LabApi.Events.CustomHandlers;
 
 namespace ZombieOptOut;
 
@@ -17,51 +17,29 @@ public class Main : Plugin<Config>
     public override LoadPriority Priority => LoadPriority.Lowest;
     #endregion
     
-    private static Main? _instance;
-    public static Main Instance => _instance ?? throw new InvalidOperationException("ZombieOptOut is not initialized!");
+    public static Main Instance { get; private set; }
     private Harmony? _harmony;
     private const string HarmonyId = "com.kadava.zombieoptout";
-
+    private EventHandler Events { get; } = new();
+    
     public override void Enable()
     {
-        _instance = this;
+        Instance = this;
         
         _harmony = new Harmony(HarmonyId);
         _harmony.PatchAll();
-
-        ManageListeners();
+        CustomHandlersManager.RegisterEventsHandler(Events);
         ServerSpecificSettings.Initialize();
     }
     public override void Disable()
     {
-        ManageListeners(pluginEnabled:false);
+        ServerSpecificSettings.DeInitialize();
+        CustomHandlersManager.UnregisterEventsHandler(Events);
         
         _harmony?.UnpatchAll(HarmonyId);
-        _instance = null;
-        ServerSpecificSettings.DeInitialize();
+        Instance = null!;
     }
-
-    private static void ManageListeners(bool pluginEnabled = true)
-    {
-        if (pluginEnabled)
-        {
-            Scp049Events.ResurrectedBody += OptOutSystem.RevivedZombie;
-            Scp049Events.ResurrectingBody += OptOutSystem.RevivingZombie;
-            ServerEvents.RoundStarted += OptOutSystem.RoundStart;
-            ServerEvents.RoundStarted += AFKReplacement.OnServerRoundStarted;
-            PlayerEvents.UpdatingEffect += AFKReplacement.OnUpdatingEffects;
-            PlayerEvents.Dying += OptOutSystem.CacheDeathPositions;
-            return;
-        }
-        
-        Scp049Events.ResurrectedBody -= OptOutSystem.RevivedZombie;
-        Scp049Events.ResurrectingBody -= OptOutSystem.RevivingZombie;
-        ServerEvents.RoundStarted -= OptOutSystem.RoundStart;
-        ServerEvents.RoundStarted -= AFKReplacement.OnServerRoundStarted;
-        PlayerEvents.UpdatingEffect -= AFKReplacement.OnUpdatingEffects;
-        PlayerEvents.Dying -= OptOutSystem.CacheDeathPositions;
-    }
-
+    
     public override void LoadConfigs()
     {
         if (!this.TryLoadConfig(ConfigFileName, out Config? config, true))
