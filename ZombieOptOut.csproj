@@ -69,6 +69,6 @@
 		<Copy SourceFiles="$(OutputPath)ZombieOptOut.dll" DestinationFolder="$(AppDataPath)/SCP Secret Laboratory/LabAPI/plugins/global"/>
 	</Target>
 	<PropertyGroup>
-		<AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);$(SL_REFERENCES);..\Dependencies</AssemblySearchPaths>
+		<AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);$(SL_REFERENCES);..\3rdPartyDependencies</AssemblySearchPaths>
 	</PropertyGroup>
 </Project>
