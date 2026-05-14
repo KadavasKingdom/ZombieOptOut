@@ -15,5 +15,5 @@ public sealed class Config
     public bool StackZombieCompensation { get; set; } = true;
     public bool UseCustomRoles { get; set; } = true;
     [Description("List of zombie names to opt out of AFK replacement. Checks if the role name contains any of these strings.")]
-    public List<string> OptOutImmuneZombies { get; set; } = [];
+    public List<string> BlacklistedCustomRoles { get; set; } = [];
 }
