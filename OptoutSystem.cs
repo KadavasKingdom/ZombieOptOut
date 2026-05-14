@@ -33,9 +33,9 @@ public static class OptOutSystem
         
         var playerAndRoles = CustomRoleHelpers.GetPlayerAndRoles();
         
-        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) 
+        if ((Main.Instance.Config!.UseCustomRoles) 
             && playerAndRoles.TryGetValue(ev.Player, out var customRole) 
-            && (Main.Instance.Config?.OptOutImmuneZombies.Any(role => customRole.Rolename.Contains(role)) ?? false)) 
+            && (Main.Instance.Config!.BlacklistedCustomRoles.Any(role => customRole.Rolename.Contains(role)))) 
             return;
 
         _latest049Player = ev.Player.UserId;
@@ -79,7 +79,7 @@ public static class OptOutSystem
         
         BroadcastUserOptedOut(optedOutPlayer);
         
-        Timing.CallDelayed(Main.Instance.Config?.ZombieFillDuration ?? Defaults.ZombieFillDuration, () =>
+        Timing.CallDelayed(Main.Instance.Config!.ZombieFillDuration, () =>
         {
             if (!NeedReplacement) return;
             if (!Player.TryGet(_latest049Player, out var player) || player.Role != RoleTypeId.Scp049) return;
@@ -87,9 +87,9 @@ public static class OptOutSystem
             float compensation = 0;
 
             for (var i = 0; i < _optedOutZombies.Count; i++)
-                compensation += Main.Instance.Config?.HealthCompensation ?? Defaults.HealthCompensation;
-
-            compensation = (Main.Instance.Config?.StackZombieCompensation ?? Defaults.StackZombieCompensation) ? compensation : Main.Instance.Config?.HealthCompensation ?? Defaults.HealthCompensation;
+                compensation += Main.Instance.Config!.HealthCompensation;
+            
+            compensation = Main.Instance.Config!.StackZombieCompensation ? compensation : Main.Instance.Config!.HealthCompensation;
             player.Heal(compensation);
             player.SendBroadcast($"<size=36>[ZombieOptOut] You were compensated for a zombie opting out with <b>+{compensation} HP</b></size>", 5);
             _optedOutZombies.Clear();
@@ -142,7 +142,7 @@ public static class OptOutSystem
             return;
         }
         
-        var xpToGive = Main.Instance.Config?.OptInExp ?? Defaults.OptedInExp;
+        var xpToGive = Main.Instance.Config!.OptInExp;
         var modifier = xpToGive > 0 ? "+" : "-";
         if (xpToGive != 0)
             XPSystem.BackEnd.XpSystemAPI.AddXP(player, xpToGive, $"Opted-in as a Zombie [{modifier}{xpToGive}]");

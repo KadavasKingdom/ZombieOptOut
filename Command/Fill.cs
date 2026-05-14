@@ -37,7 +37,7 @@ public class Fill : ICommand
             return false;
         }
 
-        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
+        if ((Main.Instance.Config!.UseCustomRoles) && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
         {
             response = "You have a custom role, so cannot replace SCP's right now!";
             return false;

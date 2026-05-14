@@ -22,7 +22,7 @@ public static class AFKReplacement
 
     public static void OnServerRoundStarted()
     {
-        if (!Main.Instance.Config?.AFKReplacement ?? Defaults.AFKReplacement)
+        if (!Main.Instance.Config!.AFKReplacement)
             return;
 
         _withinRoundStart = true;
@@ -31,7 +31,7 @@ public static class AFKReplacement
         OffendingPlayers.Clear();
         DisconnectedRoleQueue.Clear();
 
-        Timing.CallDelayed(Main.Instance.Config?.AFKReplacementValidTime ?? Defaults.AFKReplacementValidTime, () => _withinRoundStart = false);
+        Timing.CallDelayed(Main.Instance.Config!.AFKReplacementValidTime, () => _withinRoundStart = false);
     }
 
     internal static void OnDisconnected(Player? player)
@@ -47,14 +47,14 @@ public static class AFKReplacement
             if (player.IsDummy)
                 return;
 
-            if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) &&
+            if ((Main.Instance.Config!.UseCustomRoles) &&
                 SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out var savedCustomRole) &&
                 (!_cachedCustomRole.TryGetValue(player.Role, out var role) || role == null)) 
                 _cachedCustomRole[player.Role] = savedCustomRole;
 
             DisconnectedRoleQueue.Remove(player.Role);
 
-            if (!Main.Instance.Config?.DisableXPLoss ?? Defaults.DisableXPLoss)
+            if (!Main.Instance.Config!.DisableXPLoss)
                 XPSystem.BackEnd.XpSystemAPI.AddXP(player, -500, "<b>Disconnected as an SCP</b>", "red");
             
             OffendingPlayers.Add(player.UserId);
@@ -70,7 +70,7 @@ public static class AFKReplacement
     //Caches health if the player suicides off the map
     internal static void OnUpdatingEffects(PlayerEffectUpdatingEventArgs ev)
     {
-        if (!Main.Instance.Config?.AFKReplacement ?? Defaults.AFKReplacement)
+        if (!Main.Instance.Config!.AFKReplacement)
             return;
         
         var regularRole = ev.Player.Role;
@@ -97,14 +97,14 @@ public static class AFKReplacement
         if (!string.Equals(ev.Effect.name, "pitdeath", StringComparison.InvariantCultureIgnoreCase)) 
             return;
         
-        if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles) && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(ev.Player, out var savedCustomRole) && (!_cachedCustomRole.TryGetValue(regularRole, out var role) || role == null))
+        if ((Main.Instance.Config!.UseCustomRoles) && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(ev.Player, out var savedCustomRole) && (!_cachedCustomRole.TryGetValue(regularRole, out var role) || role == null))
             _cachedCustomRole[regularRole] = savedCustomRole;
         
         DisconnectedRoleQueue.Remove(regularRole);
         var cachedHealth = CacheHealth(ev.Player);
         DisconnectedRoleQueue[regularRole] = cachedHealth;
         
-        if (!Main.Instance.Config?.DisableXPLoss ?? Defaults.DisableXPLoss)
+        if (!Main.Instance.Config!.DisableXPLoss)
             XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
         
         OffendingPlayers.Add(ev.Player.UserId);
@@ -126,7 +126,7 @@ public static class AFKReplacement
             if (player.IsSCP)
                 continue;
 
-            if ((Main.Instance.Config?.UseCustomRoles ?? Defaults.UseCustomRoles)  && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
+            if (Main.Instance.Config!.UseCustomRoles && SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
                 continue;
 
             if (player.IsDummy)
@@ -193,7 +193,7 @@ public static class AFKReplacement
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {replacement.Key} has been replaced!", 5);
 
-        if (!Main.Instance.Config?.DisableXPLoss ?? Defaults.DisableXPLoss)
+        if (!Main.Instance.Config!.DisableXPLoss)
             XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
 
         Timing.CallDelayed(3f, () =>
@@ -210,7 +210,7 @@ public static class AFKReplacement
 
     private static IEnumerator<float> FillTimeout()
     {
-        yield return Timing.WaitForSeconds(Main.Instance.Config?.SCPFillDuration ?? Defaults.SCPFillDuration);
+        yield return Timing.WaitForSeconds(Main.Instance.Config!.SCPFillDuration);
         DisconnectedRoleQueue.Clear();
         CanReplace = false;
     }
