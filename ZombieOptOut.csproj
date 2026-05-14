@@ -40,7 +40,7 @@
 		<Reference Include="Unity.TextMeshPro" Private="false" />
 		<Reference Include="UnityEngine.CoreModule" Private="false" />
 		<Reference Include="SimpleCustomRoles"/>
-		<Reference Include="XpSystem"/>
+<!--		<Reference Include="XpSystem"/>--> <!--todo xp-->
 	</ItemGroup>
 	<!-- Usings globals -->
 	<ItemGroup>

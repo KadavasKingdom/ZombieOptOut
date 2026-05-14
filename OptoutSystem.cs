@@ -144,9 +144,9 @@ public static class OptOutSystem
         
         var xpToGive = Main.Instance.Config!.OptInExp;
         var modifier = xpToGive > 0 ? "+" : "-";
-        if (xpToGive != 0)
-            XPSystem.BackEnd.XpSystemAPI.AddXP(player, xpToGive, $"Opted-in as a Zombie [{modifier}{xpToGive}]");
-        
+        // if (xpToGive != 0)
+            // XPSystem.BackEnd.XpSystemAPI.AddXP(player, xpToGive, $"Opted-in as a Zombie [{modifier}{xpToGive}]");
+            // todo xp
         _optedOutZombies.Remove(replacedId);
     }
 

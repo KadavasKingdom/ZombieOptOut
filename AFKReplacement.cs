@@ -54,9 +54,9 @@ public static class AFKReplacement
 
             DisconnectedRoleQueue.Remove(player.Role);
 
-            if (!Main.Instance.Config!.DisableXPLoss)
-                XPSystem.BackEnd.XpSystemAPI.AddXP(player, -500, "<b>Disconnected as an SCP</b>", "red");
-            
+            // if (!Main.Instance.Config!.DisableXPLoss)
+                // XPSystem.BackEnd.XpSystemAPI.AddXP(player, -500, "<b>Disconnected as an SCP</b>", "red");
+                //todo xp
             OffendingPlayers.Add(player.UserId);
             
             var cacheHealth = CacheHealth(player);
@@ -104,9 +104,9 @@ public static class AFKReplacement
         var cachedHealth = CacheHealth(ev.Player);
         DisconnectedRoleQueue[regularRole] = cachedHealth;
         
-        if (!Main.Instance.Config!.DisableXPLoss)
-            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
-        
+        // if (!Main.Instance.Config!.DisableXPLoss)
+            // XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
+        // todo xp
         OffendingPlayers.Add(ev.Player.UserId);
         
         AllowReplacement(regularRole, cachedHealth);
@@ -193,9 +193,9 @@ public static class AFKReplacement
         Server.ClearBroadcasts();
         Server.SendBroadcast($"[AFK Replacement] {replacement.Key} has been replaced!", 5);
 
-        if (!Main.Instance.Config!.DisableXPLoss)
-            XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
-
+        // if (!Main.Instance.Config!.DisableXPLoss)
+            // XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
+            // todo xp
         Timing.CallDelayed(3f, () =>
         {
             if (!Mathf.Approximately(replacement.Value, -1f))
