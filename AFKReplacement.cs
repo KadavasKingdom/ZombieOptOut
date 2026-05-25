@@ -1,18 +1,16 @@
-﻿using CustomPlayerEffects;
-using LabApi.Events.Arguments.PlayerEvents;
+﻿using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Extensions;
-using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
 using PlayerRoles.PlayableScps.Scp173;
-using SimpleCustomRoles.RoleYaml;
+using UnityEngine;
 
 namespace ZombieOptOut;
 
 public class AFKReplacement
 {
     private static bool withinRoundStart = true;
-    public static Dictionary<RoleTypeId, CustomRoleBaseInfo> cachedCustomRole = new Dictionary<RoleTypeId, CustomRoleBaseInfo>();
+    public static Dictionary<RoleTypeId, string> cachedCustomRole = new Dictionary<RoleTypeId, string>();
     public static Dictionary<RoleTypeId, float> disconnectedRoleQueue = new Dictionary<RoleTypeId, float>();
     public static bool canReplace = false;
     //Uses IP instead of player info directly, otherwise references would be lost on disconnect
@@ -39,17 +37,18 @@ public class AFKReplacement
     {
         if (!withinRoundStart)
             return;
+        if (player == null)
+            return;
+        if (player.IsDummy)
+            return;
 
         if (player.Role.IsScp() && player.Role != RoleTypeId.Scp0492)
         {
-            if (player.IsDummy)
-                return;
-
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out var savedCustomRole))
             {
                 if (!cachedCustomRole.TryGetValue(player.Role, out var role) || role == null)
                 {
-                    cachedCustomRole[player.Role] = savedCustomRole;
+                    cachedCustomRole[player.Role] = savedCustomRole.Rolename;
                 }
             }
 
@@ -72,6 +71,8 @@ public class AFKReplacement
     {
         if (!Main.Instance.Config.AFKReplacement)
             return;
+        if (ev.Player == null)
+            return;
         if (!ev.Player.Role.IsScp())
             return;
         if (ev.Player.IsDummy)
@@ -82,17 +83,18 @@ public class AFKReplacement
             return;
 
         // Account for SCP173 falling into pits because they were looked at over the top of a pit.
-        if (ev.Player.RoleBase is Scp173Role scp173 && scp173.SubroutineModule.TryGetSubroutine(out Scp173BlinkTimer timer) && timer.RemainingSustain > 0f)
-            return;
-        
+        if (ev.Player.RoleBase is Scp173Role scp173)
+            if (scp173.SubroutineModule.TryGetSubroutine(out Scp173BlinkTimer timer))
+                if (timer.RemainingSustain > 0f)
+                    return;
 
         // If there are enemy players in the same room (typical for when an SCP falls in a pit while chasing someone)
-        if (ev.Player.Room != null && ev.Player.Room.Players.Any(other_player => other_player.Faction != ev.Player.Faction))
-            return;
-        
-
         // otherwise the SCP most likely jumped in a pit of their own accord instead of being "killed" via pit
-
+        if (ev.Player.Room != null)
+        {
+            if (ev.Player.Room.Players.ToList().Any(other_player => other_player.Faction != ev.Player.Faction))
+                return;
+        }
 
         if (ev.Effect.name.ToLower() == "pitdeath")
         {
@@ -100,7 +102,7 @@ public class AFKReplacement
             {
                 if (!cachedCustomRole.TryGetValue(ev.Player.Role, out var role) || role == null)
                 {
-                    cachedCustomRole[ev.Player.Role] = savedCustomRole;
+                    cachedCustomRole[ev.Player.Role] = savedCustomRole.Rolename;
                 }
             }
 
@@ -125,11 +127,20 @@ public class AFKReplacement
             return;
         if (Warhead.IsDetonated)
             return;
+        if (disconnectedRoleQueue.Count == 0)
+        {
+            CL.Warn("NO ROLE TYPE CACHED - ABORTING AUTO-FILL");
+            return;
+        }
+
 
         canReplace = true;
 
         foreach (Player player in Player.ReadyList)
         {
+            if (player == null)
+                return;
+
             if (player.IsSCP)
                 continue;
 
@@ -146,7 +157,7 @@ public class AFKReplacement
         if (fillTimerCoroutine != null || !fillTimerCoroutine.IsValid)
             Timing.KillCoroutines(fillTimerCoroutine);
 
-        fillTimerCoroutine = Timing.RunCoroutine(fillTimeout());
+        fillTimerCoroutine = Timing.RunCoroutine(FillTimeout());
     }
 
     private static float CacheHealth(Player player)
@@ -170,9 +181,9 @@ public class AFKReplacement
         else
         {
             if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
-                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename} | {disconnectedRoleQueue.FirstOrDefault().Value}hp) ";
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key]} | {disconnectedRoleQueue.FirstOrDefault().Value}hp) ";
             else
-                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename}) ";
+                broadcast += $" ({cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key]}) ";
         }
 
 
@@ -181,11 +192,16 @@ public class AFKReplacement
 
     public static void OnFilling(Player fillingPlayer)
     {
+        if(fillingPlayer == null)
+            return;
+        if (cachedCustomRole.Count <= 0)
+            return;
+
         canReplace = false;
 
         if (cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key] != null)
         {
-            Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key].Rolename} {fillingPlayer.PlayerId}");
+            Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key]} {fillingPlayer.PlayerId}");
         }
         else
         {
@@ -201,7 +217,7 @@ public class AFKReplacement
         Timing.CallDelayed(3f, () =>
         {
             if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
-                fillingPlayer.Health = disconnectedRoleQueue.FirstOrDefault().Value;
+                fillingPlayer.Health = Mathf.Clamp(disconnectedRoleQueue.FirstOrDefault().Value, 1f, fillingPlayer.MaxHealth);
 
             disconnectedRoleQueue.Clear();
         });
@@ -210,7 +226,7 @@ public class AFKReplacement
             Timing.KillCoroutines(fillTimerCoroutine);
     }
 
-    private static IEnumerator<float> fillTimeout()
+    private static IEnumerator<float> FillTimeout()
     {
         yield return Timing.WaitForSeconds(Main.Instance.Config.SCPFillDuration);
         disconnectedRoleQueue.Clear();
