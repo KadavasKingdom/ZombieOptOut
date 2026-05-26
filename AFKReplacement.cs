@@ -46,9 +46,9 @@ public class AFKReplacement
         {
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out var savedCustomRole))
             {
-                if (!cachedCustomRole.TryGetValue(player.Role, out var role) || role == null)
+                if (!cachedCustomRole.ContainsKey(player.Role))
                 {
-                    cachedCustomRole[player.Role] = savedCustomRole.Rolename;
+                    cachedCustomRole.Add(player.Role, savedCustomRole.Rolename);
                 }
             }
 
@@ -127,26 +127,19 @@ public class AFKReplacement
             return;
         if (Warhead.IsDetonated)
             return;
-        if (disconnectedRoleQueue.Count == 0)
-        {
-            CL.Warn("NO ROLE TYPE CACHED - ABORTING AUTO-FILL");
+        if (disconnectedRoleQueue.Count <= 0)
             return;
-        }
-
 
         canReplace = true;
 
-        foreach (Player player in Player.ReadyList)
+        foreach (Player player in Player.ReadyList.ToList())
         {
             if (player == null)
-                return;
-
+                continue;
             if (player.IsSCP)
                 continue;
-
             if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
                 continue;
-
             if (player.IsDummy)
                 continue;
 
@@ -192,16 +185,17 @@ public class AFKReplacement
 
     public static void OnFilling(Player fillingPlayer)
     {
-        if(fillingPlayer == null)
+        if (fillingPlayer == null)
             return;
-        if (cachedCustomRole.Count <= 0)
+        if (disconnectedRoleQueue.Count <= 0)
             return;
 
         canReplace = false;
 
-        if (cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key] != null)
+        if (cachedCustomRole.Count > 0)
         {
-            Server.RunCommand($"/scr set {cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key]} {fillingPlayer.PlayerId}");
+            if (cachedCustomRole.TryGetValue(disconnectedRoleQueue.FirstOrDefault().Key, out string customRoleName))
+                Server.RunCommand($"/scr set {customRoleName} {fillingPlayer.PlayerId}");
         }
         else
         {
@@ -219,6 +213,7 @@ public class AFKReplacement
             if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
                 fillingPlayer.Health = Mathf.Clamp(disconnectedRoleQueue.FirstOrDefault().Value, 1f, fillingPlayer.MaxHealth);
 
+            //Doesn't actually queue lul - can be improved in the future to actually queue multiple dc's
             disconnectedRoleQueue.Clear();
         });
 
