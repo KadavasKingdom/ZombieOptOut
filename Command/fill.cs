@@ -41,12 +41,6 @@ public class fill : ICommand
             return false;
         }
 
-        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
-        {
-            response = "You have a custom role, so cannot replace SCP's right now!";
-            return false;
-        }
-
         AFKReplacement.OnFilling(player);
         response = "You've filled a role, thankyou!";
         return true;
