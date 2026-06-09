@@ -1,5 +1,6 @@
 ﻿using CustomPlayerEffects;
 using HarmonyLib;
+using MEC;
 using Mirror;
 using PlayerRoles;
 using System;
@@ -20,7 +21,15 @@ internal class CustomNetworkManager_OnServerDisconnect
     {
         if (__instance._disconnectDrop)
         {
-            AFKReplacement.OnDisconnected(Player.Get(conn.identity));
+            try
+            {
+                AFKReplacement.OnDisconnected(Player.Get(conn.identity));
+            }
+            catch (Exception e)
+            {
+                // Network thread can't call CL.Error, so
+                Timing.CallDelayed(0.1f, () => CL.Error(e));
+            }
         }
     }
 }
