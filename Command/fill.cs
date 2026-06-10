@@ -21,6 +21,12 @@ public class fill : ICommand
             return false;
         }
 
+        if(AFKReplacement.withinRoundStart)
+        {
+            response = "It's too late into the round to use this command!";
+            return false;
+        }
+
         if (AFKReplacement.disconnectedRoleQueue.Count == 0 || !AFKReplacement.canReplace)
         {
             response = "There's no roles to fill in for currently!";

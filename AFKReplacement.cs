@@ -9,7 +9,7 @@ namespace ZombieOptOut;
 
 public class AFKReplacement
 {
-    private static bool withinRoundStart = true;
+    public static bool withinRoundStart = true;
     public static Dictionary<RoleTypeId, string> cachedCustomRole = new Dictionary<RoleTypeId, string>();
     public static Dictionary<RoleTypeId, float> disconnectedRoleQueue = new Dictionary<RoleTypeId, float>();
     public static bool canReplace = false;
