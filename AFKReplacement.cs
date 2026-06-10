@@ -1,4 +1,5 @@
 ﻿using LabApi.Events.Arguments.PlayerEvents;
+using LabApi.Events.Arguments.ServerEvents;
 using LabApi.Features.Extensions;
 using MEC;
 using PlayerRoles;
@@ -59,8 +60,8 @@ public class AFKReplacement
             if (!Main.Instance.Config.DisableXPLoss)
                 XPSystem.BackEnd.XpSystemAPI.AddXP(player, -500, "<b>Disconnected as an SCP</b>", "red");
 
-            if (!offendingPlayers.Contains(player.IpAddress))
-                offendingPlayers.Add(player.IpAddress);
+            /*if (!offendingPlayers.Contains(player.IpAddress))
+                offendingPlayers.Add(player.IpAddress);*/
 
             disconnectedRoleQueue.Add(player.Role, CacheHealth(player));
             AllowReplacement();
@@ -82,6 +83,8 @@ public class AFKReplacement
             return;
         if (ev.Player.Role == RoleTypeId.Scp0492)
             return;
+        if (ev.Effect.name.ToLower() != "pitdeath")
+            return;
 
         // Account for SCP173 falling into pits because they were looked at over the top of a pit.
         if (ev.Player.RoleBase is Scp173Role scp173)
@@ -89,6 +92,7 @@ public class AFKReplacement
                 if (timer.RemainingSustain > 0f)
                     return;
 
+        CL.Info("2");
         // If there are enemy players in the same room (typical for when an SCP falls in a pit while chasing someone)
         // otherwise the SCP most likely jumped in a pit of their own accord instead of being "killed" via pit
         if (ev.Player.Room != null)
@@ -97,29 +101,28 @@ public class AFKReplacement
                 return;
         }
 
-        if (ev.Effect.name.ToLower() == "pitdeath")
+        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(ev.Player, out var savedCustomRole))
         {
-            if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(ev.Player, out var savedCustomRole))
-            {
-                if (!cachedCustomRole.TryGetValue(ev.Player.Role, out var role) || role == null)
-                {
-                    cachedCustomRole[ev.Player.Role] = savedCustomRole.Rolename;
-                }
-            }
-
-            if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
-                disconnectedRoleQueue.Remove(ev.Player.Role);
-
-            disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
-
-            if (!Main.Instance.Config.DisableXPLoss)
-                XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
-
-            if (!offendingPlayers.Contains(ev.Player.IpAddress))
-                offendingPlayers.Add(ev.Player.IpAddress);
-
-            AllowReplacement();
+            if (!cachedCustomRole.ContainsKey(ev.Player.Role))
+                cachedCustomRole.Add(ev.Player.Role, savedCustomRole.Rolename);
+            else if (cachedCustomRole.TryGetValue(ev.Player.Role, out var role) && role == null)
+                cachedCustomRole.Add(ev.Player.Role, savedCustomRole.Rolename);
         }
+
+        if (disconnectedRoleQueue.ContainsKey(ev.Player.Role))
+            disconnectedRoleQueue.Remove(ev.Player.Role);
+
+        disconnectedRoleQueue.Add(ev.Player.Role, CacheHealth(ev.Player));
+
+        if (!Main.Instance.Config.DisableXPLoss)
+            XPSystem.BackEnd.XpSystemAPI.AddXP(ev.Player, -500, "<b>Suicided as an SCP</b>", "red");
+
+        if (!offendingPlayers.Contains(ev.Player.IpAddress))
+            offendingPlayers.Add(ev.Player.IpAddress);
+
+
+        AllowReplacement();
+
     }
 
     private static void AllowReplacement()
@@ -167,7 +170,7 @@ public class AFKReplacement
     {
         string broadcast = $"<size=40>[AFK Replacement] <b>{disconnectedRoleQueue.FirstOrDefault().Key}</b>";
 
-        if (cachedCustomRole[disconnectedRoleQueue.FirstOrDefault().Key] == null)
+        if (!cachedCustomRole.ContainsKey(disconnectedRoleQueue.FirstOrDefault().Key))
         {
             if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
                 broadcast += $" ({disconnectedRoleQueue.FirstOrDefault().Value}hp) ";
@@ -229,5 +232,12 @@ public class AFKReplacement
         disconnectedRoleQueue.Clear();
         cachedCustomRole.Clear();
         canReplace = false;
+    }
+
+    public static void OnServerRoundEnded(RoundEndedEventArgs ev)
+    {
+        cachedCustomRole.Clear();
+        offendingPlayers.Clear();
+        disconnectedRoleQueue.Clear();
     }
 }

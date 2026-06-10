@@ -29,6 +29,7 @@ public class Main : Plugin<Config>
         LabApi.Events.Handlers.ServerEvents.RoundStarted += OptOutSystem.RoundStart;
         LabApi.Events.Handlers.ServerEvents.RoundStarted += AFKReplacement.OnServerRoundStarted;
         LabApi.Events.Handlers.PlayerEvents.UpdatingEffect += AFKReplacement.OnUpdatingEffects;
+        LabApi.Events.Handlers.ServerEvents.RoundEnded += AFKReplacement.OnServerRoundEnded;
         ServerSpecificSettings.Initialize();
     }
     public override void Disable()
@@ -40,6 +41,7 @@ public class Main : Plugin<Config>
         LabApi.Events.Handlers.ServerEvents.RoundStarted -= OptOutSystem.RoundStart;
         LabApi.Events.Handlers.ServerEvents.RoundStarted -= AFKReplacement.OnServerRoundStarted;
         LabApi.Events.Handlers.PlayerEvents.UpdatingEffect -= AFKReplacement.OnUpdatingEffects;
+        LabApi.Events.Handlers.ServerEvents.RoundEnded -= AFKReplacement.OnServerRoundEnded;
         ServerSpecificSettings.DeInitialize();
     }
 
