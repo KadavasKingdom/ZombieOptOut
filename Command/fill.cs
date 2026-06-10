@@ -21,7 +21,7 @@ public class fill : ICommand
             return false;
         }
 
-        if(AFKReplacement.withinRoundStart)
+        if(!AFKReplacement.withinRoundStart)
         {
             response = "It's too late into the round to use this command!";
             return false;
