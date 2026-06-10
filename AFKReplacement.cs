@@ -51,6 +51,7 @@ public class AFKReplacement
                     cachedCustomRole.Add(player.Role, savedCustomRole.Rolename);
                 }
             }
+            else cachedCustomRole[player.Role] = null;
 
             if (disconnectedRoleQueue.ContainsKey(player.Role))
                 disconnectedRoleQueue.Remove(player.Role);
