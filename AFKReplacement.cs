@@ -216,6 +216,7 @@ public class AFKReplacement
 
             //Doesn't actually queue lul - can be improved in the future to actually queue multiple dc's
             disconnectedRoleQueue.Clear();
+            cachedCustomRole.Clear();
         });
 
         if (fillTimerCoroutine != null || fillTimerCoroutine.IsValid)
@@ -226,6 +227,7 @@ public class AFKReplacement
     {
         yield return Timing.WaitForSeconds(Main.Instance.Config.SCPFillDuration);
         disconnectedRoleQueue.Clear();
+        cachedCustomRole.Clear();
         canReplace = false;
     }
 }
