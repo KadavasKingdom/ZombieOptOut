@@ -5,6 +5,8 @@ using MEC;
 using PlayerRoles;
 using PlayerRoles.PlayableScps.Scp173;
 using UnityEngine;
+using SimpleCustomRoles.Helpers;
+using SimpleCustomRoles.RoleYaml;
 
 namespace ZombieOptOut;
 
@@ -17,6 +19,8 @@ public class AFKReplacement
     //Uses IP instead of player info directly, otherwise references would be lost on disconnect
     public static List<string> offendingPlayers = new();
     private static CoroutineHandle fillTimerCoroutine;
+    public static List<Player> fillingPlayers = new();
+    public static List<Player> playersWithCustomRoles = new();
 
     //TODO: Queue disconnected players and roles, framework is already mostly in place
 
@@ -30,7 +34,15 @@ public class AFKReplacement
         cachedCustomRole.Clear();
         offendingPlayers.Clear();
         disconnectedRoleQueue.Clear();
-
+        playersWithCustomRoles.Clear();
+        Timing.CallDelayed(3f, () =>
+        {
+            foreach (var player in Player.ReadyList)
+            {
+                if (CustomRoleHelpers.Contains(player))
+                    playersWithCustomRoles.Add(player);
+            }
+        });
         Timing.CallDelayed(Main.Instance.Config.AFKReplacementValidTime, () => withinRoundStart = false);
     }
 
@@ -91,15 +103,12 @@ public class AFKReplacement
             if (scp173.SubroutineModule.TryGetSubroutine(out Scp173BlinkTimer timer))
                 if (timer.RemainingSustain > 0f)
                     return;
-
-        CL.Info("2");
+                    
         // If there are enemy players in the same room (typical for when an SCP falls in a pit while chasing someone)
-        // otherwise the SCP most likely jumped in a pit of their own accord instead of being "killed" via pit
         if (ev.Player.Room != null)
-        {
             if (ev.Player.Room.Players.ToList().Any(other_player => other_player.Faction != ev.Player.Faction))
                 return;
-        }
+                // otherwise the SCP most likely jumped in a pit of their own accord instead of being "killed" via pit
 
         if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(ev.Player, out var savedCustomRole))
         {
@@ -187,6 +196,20 @@ public class AFKReplacement
         return (broadcast + "has disconnected!\n </size><size=34> You can take their spot by typing <b>.fill</b> in your console (`)!</size>");
     }
 
+    public static void AddToFillPool(Player player)
+    {
+        fillingPlayers.Add(player);
+        player.ClearBroadcasts();
+        player.SendBroadcast($"You have joined the queue to fill. {fillingPlayers.Distinct().Count() - 1} other players are in queue.", 4);
+        // make players without custom roles more likely to be chosen to fill
+        if (!playersWithCustomRoles.Contains(player))
+        {
+            for (int i = 0; i < Main.Instance.Config.FillChanceMultiplierForNoCustomRole - 1; i++)
+                fillingPlayers.Add(player);
+            player.SendBroadcast($"Since you did not spawn with a custom role, you are {Main.Instance.Config.FillChanceMultiplierForNoCustomRole} times as likely to be selected.", 3);
+        }
+    }
+
     public static void OnFilling(Player fillingPlayer)
     {
         if (fillingPlayer == null)
@@ -212,14 +235,11 @@ public class AFKReplacement
         if (!Main.Instance.Config.DisableXPLoss)
             XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
 
-        Timing.CallDelayed(3f, () =>
-        {
-            if (disconnectedRoleQueue.FirstOrDefault().Value != -1f)
+        var health = disconnectedRoleQueue.FirstOrDefault().Value;
+        Timing.CallDelayed(3f, () => {
+            if (health != 1f) {
                 fillingPlayer.Health = Mathf.Clamp(disconnectedRoleQueue.FirstOrDefault().Value, 1f, fillingPlayer.MaxHealth);
-
-            //Doesn't actually queue lul - can be improved in the future to actually queue multiple dc's
-            disconnectedRoleQueue.Clear();
-            cachedCustomRole.Clear();
+            }
         });
 
         if (fillTimerCoroutine != null || fillTimerCoroutine.IsValid)
@@ -229,6 +249,12 @@ public class AFKReplacement
     private static IEnumerator<float> FillTimeout()
     {
         yield return Timing.WaitForSeconds(Main.Instance.Config.SCPFillDuration);
+        if (fillingPlayers.Count != 0)
+        {
+            var randomFiller = fillingPlayers[URandom.Range(0, fillingPlayers.Count - 1)];
+            OnFilling(randomFiller);
+        }
+        fillingPlayers.Clear();
         disconnectedRoleQueue.Clear();
         cachedCustomRole.Clear();
         canReplace = false;

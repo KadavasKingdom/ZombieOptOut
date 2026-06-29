@@ -41,19 +41,19 @@ public class fill : ICommand
             return false;
         }
 
+        if (AFKReplacement.fillingPlayers.Contains(player))
+        {
+            response = "You're already in the fill queue!";
+            return false;
+        }
+
         if (AFKReplacement.offendingPlayers.Contains(player.IpAddress))
         {
             response = "You're blacklisted from replacing SCP's this round.";
             return false;
         }
 
-        if (SimpleCustomRoles.Helpers.CustomRoleHelpers.TryGetCustomRole(player, out _))
-        {
-            response = "You have a custom role, so cannot replace SCP's right now!";
-            return false;
-        }
-
-        AFKReplacement.OnFilling(player);
+        AFKReplacement.AddToFillPool(player);
         response = "You've filled a role, thankyou!";
         return true;
     }
