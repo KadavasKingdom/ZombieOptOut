@@ -64,7 +64,6 @@ public class AFKReplacement
                     cachedCustomRole.Add(player.Role, savedCustomRole.Rolename);
                 }
             }
-            else cachedCustomRole[player.Role] = null;
 
             if (disconnectedRoleQueue.ContainsKey(player.Role))
                 disconnectedRoleQueue.Remove(player.Role);
@@ -223,6 +222,8 @@ public class AFKReplacement
         {
             if (cachedCustomRole.TryGetValue(disconnectedRoleQueue.FirstOrDefault().Key, out string customRoleName))
                 Server.RunCommand($"/scr set {customRoleName} {fillingPlayer.PlayerId}");
+            else fillingPlayer.SetRole(disconnectedRoleQueue.FirstOrDefault().Key);
+
         }
         else
         {
