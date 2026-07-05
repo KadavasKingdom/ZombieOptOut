@@ -239,7 +239,7 @@ public class AFKReplacement
         var health = disconnectedRoleQueue.FirstOrDefault().Value;
         Timing.CallDelayed(3f, () => {
             if (health != -1f) {
-                fillingPlayer.Health = Mathf.Clamp(disconnectedRoleQueue.FirstOrDefault().Value, 1f, fillingPlayer.MaxHealth);
+                fillingPlayer.Health = Mathf.Clamp(health, 1f, fillingPlayer.MaxHealth);
             }
         });
 
