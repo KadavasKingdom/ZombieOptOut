@@ -41,7 +41,7 @@ public class fill : ICommand
             return false;
         }
 
-        if (AFKReplacement.fillingPlayers.Contains(player))
+        if (AFKReplacement.fillingPlayers.Contains(player.NetworkId))
         {
             response = "You're already in the fill queue!";
             return false;

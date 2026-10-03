@@ -115,7 +115,7 @@ public class OptOutSystem
             savedCustomRole = null;
         });
 
-        XPSystem.BackEnd.XpSystemAPI.AddXP(player, 100, "Opted-in as a Zombie [+100]");
+        XPSystem.BackEnd.XpSystemAPI.AddXP(player, 100, "Opted-in as a Zombie");
     }
 
     internal static void RoundStart()
