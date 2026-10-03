@@ -238,7 +238,7 @@ public class AFKReplacement
         Server.SendBroadcast($"[AFK Replacement] {disconnectedRoleQueue.FirstOrDefault().Key} has been replaced!", 5);
 
         if (!Main.Instance.Config.DisableXPLoss)
-            XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP [+150]");
+            XPSystem.BackEnd.XpSystemAPI.AddXP(fillingPlayer, 150, "Filled for an SCP");
 
         var health = disconnectedRoleQueue.FirstOrDefault().Value;
         Timing.CallDelayed(3f, () =>
